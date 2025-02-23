@@ -50,7 +50,7 @@ export const SpotifyApp = ({ isOpen, onClose }: { isOpen: boolean; onClose: () =
     songId: SAMPLE_SONGS[0].id
   })
   const audioRef = useRef<HTMLAudioElement>(null)
-  const progressInterval = useRef<NodeJS.Timeout>()
+  const progressInterval = useRef<NodeJS.Timeout | undefined>(undefined)
   const sounds = useSystemSounds()
   const { globalVolume, isMuted } = useVolume()
 
