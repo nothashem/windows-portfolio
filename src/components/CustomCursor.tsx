@@ -1,20 +1,19 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 
 const CustomCursor = () => {
-  const [position, setPosition] = useState({ x: 0, y: 0 })
-
   useEffect(() => {
     const updatePosition = (e: MouseEvent) => {
-      setPosition({ x: e.clientX, y: e.clientY })
+      // We're handling cursor position via CSS
+      // This component is just for initialization
     }
 
     window.addEventListener('mousemove', updatePosition)
     return () => window.removeEventListener('mousemove', updatePosition)
   }, [])
 
-  return null // We're handling cursors via CSS instead
+  return null
 }
 
 export default CustomCursor 

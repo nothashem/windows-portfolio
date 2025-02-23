@@ -1,5 +1,6 @@
 import './globals.css'
 import { Metadata } from 'next'
+import CustomCursor from '@/components/CustomCursor'
 
 export const metadata: Metadata = {
   title: 'Hashim OS',
