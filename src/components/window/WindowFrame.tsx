@@ -112,7 +112,10 @@ export const WindowFrame = ({
           }}
           dragElastic={0}
           onDragStart={handleDragStart}
-          onDragEnd={handleDragEnd}
+          onDragEnd={(event, info) => {
+            handleDragEnd()
+            setPosition({ x: info.point.x, y: info.point.y })
+          }}
         >
           {/* Title Bar */}
           <div
@@ -158,7 +161,26 @@ export const WindowFrame = ({
           {/* Resize Handles */}
           {!isMaximized && (
             <>
-              <div className="absolute top-0 left-0 right-0 h-1 cursor-n-resize hover:bg-blue-500/50" />
+              <div 
+                className="absolute top-0 left-0 right-0 h-1 cursor-n-resize hover:bg-blue-500/50"
+                onMouseDown={(e) => {
+                  const startY = e.clientY
+                  const startHeight = windowRef.current?.clientHeight || 0
+                  
+                  const handleMouseMove = (e: MouseEvent) => {
+                    const deltaY = startY - e.clientY
+                    setSize(prev => ({
+                      ...prev,
+                      height: Math.max(200, startHeight + deltaY)
+                    }))
+                  }
+                  
+                  document.addEventListener('mousemove', handleMouseMove)
+                  document.addEventListener('mouseup', () => {
+                    document.removeEventListener('mousemove', handleMouseMove)
+                  }, { once: true })
+                }}
+              />
               <div className="absolute bottom-0 left-0 right-0 h-1 cursor-s-resize hover:bg-blue-500/50" />
               <div className="absolute left-0 top-0 bottom-0 w-1 cursor-w-resize hover:bg-blue-500/50" />
               <div className="absolute right-0 top-0 bottom-0 w-1 cursor-e-resize hover:bg-blue-500/50" />
