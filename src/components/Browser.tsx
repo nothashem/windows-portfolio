@@ -1,7 +1,6 @@
 'use client'
 
-import { motion } from 'framer-motion'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { 
   FaArrowLeft, 
   FaArrowRight, 
@@ -9,7 +8,6 @@ import {
   FaStar, 
   FaCog,
   FaLock,
-  FaSearch,
   FaGlobe
 } from 'react-icons/fa'
 import { WindowFrame } from './window/WindowFrame'
@@ -88,11 +86,6 @@ export const Browser = ({ isOpen, onClose, onMinimize }: BrowserProps) => {
 
   const toggleBookmark = () => {
     setIsBookmarked(!isBookmarked)
-  }
-
-  const handleNavigation = (url: string) => {
-    sounds.playClick()
-    navigateTo(url)
   }
 
   return (

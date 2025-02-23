@@ -2,7 +2,6 @@ import { motion } from 'framer-motion';
 import { useSystemSounds } from '@/hooks/useSystemSounds';
 
 interface TaskbarIconProps {
-  id: string;
   icon: React.ReactNode;
   isOpen: boolean;
   isActive: boolean;
