@@ -1,0 +1,261 @@
+'use client'
+
+import { motion } from 'framer-motion'
+import { useState, useEffect } from 'react'
+import { 
+  FaArrowLeft, 
+  FaArrowRight, 
+  FaRedo, 
+  FaStar, 
+  FaCog,
+  FaLock,
+  FaSearch,
+  FaGlobe
+} from 'react-icons/fa'
+import { WindowFrame } from './window/WindowFrame'
+import { useSystemSounds } from '@/hooks/useSystemSounds'
+
+interface Bookmark {
+  id: string
+  title: string
+  url: string
+  icon?: string
+  favicon?: string
+}
+
+const DEFAULT_BOOKMARKS: Bookmark[] = [
+  {
+    id: 'blog',
+    title: 'Blog',
+    url: 'https://blog.hash8m.com',
+    icon: '📝',
+    favicon: '/icons/blog-favicon.png'
+  },
+  {
+    id: 'hash8m',
+    title: 'Hash8m',
+    url: 'https://hash8m.com',
+    icon: '🌐'
+  },
+  {
+    id: 'tamara',
+    title: 'Tamara',
+    url: 'https://tamara.co',
+    icon: '💳'
+  },
+]
+
+export const Browser = ({ 
+  isOpen, 
+  onClose,
+  isMinimized,
+  onMinimize 
+}: { 
+  isOpen: boolean; 
+  onClose: () => void;
+  isMinimized?: boolean;
+  onMinimize?: () => void;
+}) => {
+  const [mounted, setMounted] = useState(false)
+  const [showPopup, setShowPopup] = useState(false)
+  const [currentUrl, setCurrentUrl] = useState('https://blog.hash8m.com')
+  const [displayUrl, setDisplayUrl] = useState('https://blog.hash8m.com')
+  const [urlHistory, setUrlHistory] = useState<string[]>(['https://blog.hash8m.com'])
+  const [historyIndex, setHistoryIndex] = useState(0)
+  const [isLoading, setIsLoading] = useState(true)
+  const [bookmarks] = useState<Bookmark[]>(DEFAULT_BOOKMARKS)
+  const [isBookmarked, setIsBookmarked] = useState(false)
+  const sounds = useSystemSounds()
+
+  useEffect(() => {
+    setMounted(true)
+    const timer = setTimeout(() => {
+      setShowPopup(true)
+    }, 6000) // 1 minute in milliseconds
+
+    return () => clearTimeout(timer)
+  }, [])
+
+  const handleIframeLoad = () => {
+    setIsLoading(false)
+  }
+
+  const navigateTo = (url: string) => {
+    sounds.playClick()
+    let validUrl = url
+    if (!url.startsWith('http://') && !url.startsWith('https://') && !url.startsWith('/')) {
+      validUrl = `https://${url}`
+    }
+    setCurrentUrl(validUrl)
+    setDisplayUrl(validUrl)
+    setUrlHistory(prev => [...prev.slice(0, historyIndex + 1), validUrl])
+    setHistoryIndex(prev => prev + 1)
+    setIsLoading(true)
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      navigateTo(displayUrl)
+    }
+  }
+
+  const toggleBookmark = () => {
+    setIsBookmarked(!isBookmarked)
+  }
+
+  const handleNavigation = (url: string) => {
+    sounds.playClick()
+    setCurrentUrl(url)
+  }
+
+  const handleBack = () => {
+    if (historyIndex > 0) {
+      sounds.playClick()
+      navigateTo(urlHistory[historyIndex - 1])
+    } else {
+      sounds.playError()
+    }
+  }
+
+  if (!mounted) return null
+
+  return (
+    <WindowFrame
+      title="Web Browser"
+      icon={<FaGlobe className="w-4 h-4 text-blue-400" />}
+      isOpen={isOpen}
+      onClose={onClose}
+      onMinimize={onMinimize}
+      defaultSize={{ width: '80%', height: '80%' }}
+      defaultPosition={{ x: 60, y: 60 }}
+      isFullScreen={false}
+    >
+      <div className="flex flex-col h-full w-full bg-[#1a1a1a]">
+        {/* Navigation Bar */}
+        <div className="flex items-center gap-2 p-2 bg-[#2a2a2a] border-b border-white/10">
+          <div className="flex items-center gap-1">
+            <button
+              onClick={handleBack}
+              disabled={historyIndex <= 0}
+              className={`p-2 rounded-md ${
+                historyIndex > 0 ? 'hover:bg-white/10 text-white' : 'text-white/30'
+              }`}
+              aria-label="Go back"
+            >
+              <FaArrowLeft className="w-4 h-4" />
+            </button>
+            
+            <button
+              onClick={() => historyIndex < urlHistory.length - 1 && navigateTo(urlHistory[historyIndex + 1])}
+              disabled={historyIndex >= urlHistory.length - 1}
+              className={`p-2 rounded-md ${
+                historyIndex < urlHistory.length - 1 ? 'hover:bg-white/10 text-white' : 'text-white/30'
+              }`}
+              aria-label="Go forward"
+            >
+              <FaArrowRight className="w-4 h-4" />
+            </button>
+
+            <button
+              onClick={() => navigateTo(currentUrl)}
+              className="p-2 rounded-md hover:bg-white/10 text-white"
+              aria-label="Reload page"
+            >
+              <FaRedo className="w-4 h-4" />
+            </button>
+          </div>
+
+          <div className="flex-1 flex items-center bg-[#333333] rounded-md px-3 py-1.5">
+            <FaLock className="w-3 h-3 text-green-500 mr-2" />
+            <input
+              type="text"
+              value={displayUrl}
+              onChange={(e) => setDisplayUrl(e.target.value)}
+              onKeyDown={handleKeyDown}
+              className="w-full bg-transparent border-none outline-none text-white text-sm"
+              placeholder="Enter URL or search"
+            />
+          </div>
+
+          <button
+            onClick={toggleBookmark}
+            className={`p-2 rounded-md hover:bg-white/10 ${isBookmarked ? 'text-yellow-400' : 'text-white'}`}
+            aria-label={isBookmarked ? 'Remove bookmark' : 'Add bookmark'}
+          >
+            <FaStar className="w-4 h-4" />
+          </button>
+
+          <button
+            className="p-2 rounded-md hover:bg-white/10 text-white"
+            aria-label="Settings"
+          >
+            <FaCog className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Bookmarks Bar */}
+        <div className="flex items-center gap-1 px-2 py-1 bg-[#252525] border-b border-white/10">
+          {bookmarks.map((bookmark) => (
+            <button
+              key={bookmark.id}
+              onClick={() => navigateTo(bookmark.url)}
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-md 
+                       hover:bg-white/10 text-white/90 transition-colors
+                       ${currentUrl === bookmark.url ? 'bg-white/10' : ''}`}
+            >
+              <span className="text-base">{bookmark.icon}</span>
+              <span className="text-sm">{bookmark.title}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* Content Area */}
+        <div className="flex-1 min-h-0 w-full overflow-hidden relative">
+          {showPopup && (
+            <div className="absolute top-4 right-4 bg-blue-600 text-white p-4 rounded-lg shadow-lg z-50 max-w-sm">
+              <div className="flex flex-col gap-3">
+                <p className="font-semibold">Interested in building the future?</p>
+                <p>Join Tamara and be part of the revolution!</p>
+                <div className="flex justify-end gap-2">
+                  <button 
+                    onClick={() => {
+                      navigateTo('https://tamara.co/careers');
+                      setShowPopup(false);
+                    }}
+                    className="px-4 py-2 bg-white text-blue-600 rounded hover:bg-blue-50"
+                  >
+                    Learn More
+                  </button>
+                  <button 
+                    onClick={() => setShowPopup(false)}
+                    className="px-4 py-2 bg-blue-700 rounded hover:bg-blue-800"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+          {isLoading && (
+            <div className="absolute top-0 left-0 w-full h-1 bg-[#1a1a1a]">
+              <div className="h-full bg-blue-500 animate-pulse" />
+            </div>
+          )}
+          <iframe
+            src={currentUrl}
+            style={{
+              width: '100%',
+              height: '100%',
+              border: 'none',
+              display: 'block',
+              backgroundColor: 'white'
+            }}
+            sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+            referrerPolicy="no-referrer"
+            onLoad={handleIframeLoad}
+          />
+        </div>
+      </div>
+    </WindowFrame>
+  )
+}
