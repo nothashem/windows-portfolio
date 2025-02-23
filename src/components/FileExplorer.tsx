@@ -12,7 +12,15 @@ interface FileExplorerProps {
   onClose: () => void
 }
 
-const SAMPLE_FILES = [
+type FileType = 'file' | 'folder'
+
+interface FileItem {
+  id: string
+  name: string
+  type: FileType
+}
+
+const SAMPLE_FILES: FileItem[] = [
   { id: '1', name: 'Documents', type: 'folder' },
   { id: '2', name: 'Pictures', type: 'folder' },
   { id: '3', name: 'readme.txt', type: 'file' },
@@ -22,7 +30,7 @@ const SAMPLE_FILES = [
 export const FileExplorer = ({ isOpen, onClose }: FileExplorerProps) => {
   const sounds = useSystemSounds()
 
-  const handleItemClick = (type: 'file' | 'folder') => {
+  const handleItemClick = (type: FileType) => {
     if (type === 'folder') {
       sounds.playOpen()
     } else {
