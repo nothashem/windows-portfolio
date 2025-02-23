@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { FaTrash, FaFolder, FaMusic, FaFileAlt, FaGlobe } from 'react-icons/fa'
+import { FaMusic, FaFileAlt, FaGlobe } from 'react-icons/fa'
 import { TaskbarIcon } from './TaskbarIcon'
 import { Clock } from './taskbar/Clock'
 import { AudioControl } from './taskbar/AudioControl'

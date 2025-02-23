@@ -1,7 +1,7 @@
 'use client'
 
 import { motion, AnimatePresence } from 'framer-motion'
-import { FaFolder, FaUser, FaEnvelope, FaGlobe, FaMusic, FaFileAlt } from 'react-icons/fa'
+import { FaGlobe, FaMusic, FaFileAlt } from 'react-icons/fa'
 import { useSystemSounds } from '../hooks/useSystemSounds'
 
 interface AppItem {

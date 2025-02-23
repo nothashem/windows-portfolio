@@ -40,7 +40,6 @@ export const WindowFrame = ({
   const [position, setPosition] = useState(defaultPosition)
   const [size, setSize] = useState(defaultSize)
   const windowRef = useRef<HTMLDivElement>(null)
-  const [isDragging, setIsDragging] = useState(false)
   const dragRef = useRef<{ x: number; y: number } | null>(null)
 
   const sounds = useSystemSounds()
