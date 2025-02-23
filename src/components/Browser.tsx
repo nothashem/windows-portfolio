@@ -117,7 +117,7 @@ export const Browser = ({ isOpen, onClose, onMinimize }: BrowserProps) => {
   useEffect(() => {
     const timer = setTimeout(() => {
       setShowPopup(true)
-    }, 6000) // Show after 6 seconds
+    }, 15000) // Show after 12 seconds
 
     return () => clearTimeout(timer)
   }, [])
