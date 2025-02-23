@@ -72,11 +72,12 @@ export const SpotifyApp = ({ isOpen, onClose }: { isOpen: boolean; onClose: () =
 
   // Save progress to cache when component unmounts or window closes
   useEffect(() => {
+    const audio = audioRef.current
     return () => {
-      if (audioRef.current) {
+      if (audio) {
         localStorage.setItem('songProgress', JSON.stringify({
-          currentTime: audioRef.current.currentTime,
-          duration: audioRef.current.duration,
+          currentTime: audio.currentTime,
+          duration: audio.duration,
           songId: currentSong.id
         }))
       }

@@ -81,10 +81,11 @@ export const Notepad = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
     return () => clearTimeout(saveTimeout)
   }, [content, currentNoteId, savedNotes])
 
-  const createNewNote = () => {
-    const newNote: Note = {
+  const handleNewNote = () => {
+    sounds.playClick()
+    const newNote = {
       id: Date.now().toString(),
-      content: 'Untitled\n\n',
+      content: '',
       lastModified: new Date().toISOString()
     }
     const updatedNotes = [...savedNotes, newNote]
@@ -106,7 +107,7 @@ export const Notepad = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
     
     if (updatedNotes.length === 0) {
       // If deleting the last note, create a new one
-      createNewNote()
+      handleNewNote()
       return
     }
 
@@ -141,7 +142,7 @@ export const Notepad = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
         {/* Sidebar with saved notes */}
         <div className="w-48 border-r border-white/10 p-2 flex flex-col">
           <button
-            onClick={createNewNote}
+            onClick={handleNewNote}
             className="w-full px-3 py-2 bg-white/10 hover:bg-white/20 rounded mb-2 text-sm"
           >
             New Note

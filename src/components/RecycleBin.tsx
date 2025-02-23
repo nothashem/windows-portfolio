@@ -1,12 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { 
-  FaTrash, 
-  FaUndo, 
-  FaEllipsisH,
-  FaTrashAlt
-} from 'react-icons/fa'
+import { FaUndo } from 'react-icons/fa'
 import { WindowFrame } from './window/WindowFrame'
 
 interface RecycleBinProps {

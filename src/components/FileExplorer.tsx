@@ -1,6 +1,5 @@
 'use client'
 
-import { useState } from 'react'
 import { 
   FaFolder, 
   FaFile
@@ -11,15 +10,6 @@ import { useSystemSounds } from '@/hooks/useSystemSounds'
 interface FileExplorerProps {
   isOpen: boolean
   onClose: () => void
-}
-
-interface FileItem {
-  id: string
-  name: string
-  type: 'folder' | 'file'
-  children?: FileItem[]
-  size?: string
-  modified?: string
 }
 
 const SAMPLE_FILES = [
