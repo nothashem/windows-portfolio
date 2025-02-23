@@ -109,8 +109,14 @@ export const SpotifyApp = ({ isOpen, onClose }: { isOpen: boolean; onClose: () =
   }, [isPlaying, currentSong.id])
 
   useEffect(() => {
-    if (audioRef.current) {
-      audioRef.current.volume = isMuted ? 0 : globalVolume / 100
+    const currentAudio = audioRef.current
+    if (currentAudio) {
+      currentAudio.volume = isMuted ? 0 : globalVolume / 100
+    }
+    return () => {
+      if (currentAudio) {
+        currentAudio.pause()
+      }
     }
   }, [globalVolume, isMuted])
 

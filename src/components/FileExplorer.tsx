@@ -3,9 +3,6 @@
 import { useState } from 'react'
 import { 
   FaFolder, 
-  FaFolderOpen,
-  FaChevronRight, 
-  FaChevronDown,
   FaFile
 } from 'react-icons/fa'
 import { WindowFrame } from './window/WindowFrame'
@@ -33,91 +30,7 @@ const SAMPLE_FILES = [
 ]
 
 export const FileExplorer = ({ isOpen, onClose }: FileExplorerProps) => {
-  const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set())
-  const [selectedFile, setSelectedFile] = useState<string | null>(null)
   const sounds = useSystemSounds()
-
-  const fileSystem: FileItem[] = [
-    {
-      id: 'desktop',
-      name: 'Desktop',
-      type: 'folder',
-      children: [
-        { id: 'doc1', name: 'Document.pdf', type: 'file', size: '1.2 MB', modified: '2/23/2024' },
-        { id: 'img1', name: 'Image.jpg', type: 'file', size: '2.4 MB', modified: '2/23/2024' }
-      ]
-    },
-    {
-      id: 'documents',
-      name: 'Documents',
-      type: 'folder',
-      children: [
-        { id: 'work', name: 'Work', type: 'folder', children: [] },
-        { id: 'personal', name: 'Personal', type: 'folder', children: [] }
-      ]
-    },
-    {
-      id: 'downloads',
-      name: 'Downloads',
-      type: 'folder',
-      children: []
-    }
-  ]
-
-  const toggleFolder = (folderId: string) => {
-    setExpandedFolders(prev => {
-      const next = new Set(prev)
-      if (next.has(folderId)) {
-        next.delete(folderId)
-      } else {
-        next.add(folderId)
-      }
-      return next
-    })
-  }
-
-  const renderFileTree = (items: FileItem[], level = 0) => {
-    return items.map(item => (
-      <div key={item.id} style={{ paddingLeft: `${level * 20}px` }}>
-        <div
-          className="flex items-center py-1 px-2 hover:bg-white/5 rounded-sm cursor-default"
-        >
-          {item.type === 'folder' && (
-            <button
-              onClick={() => {
-                sounds.playOpen()
-                toggleFolder(item.id)
-              }}
-              className="p-1 hover:bg-white/10 rounded-sm"
-            >
-              {expandedFolders.has(item.id) ? (
-                <FaChevronDown className="w-3 h-3 text-white/70" />
-              ) : (
-                <FaChevronRight className="w-3 h-3 text-white/70" />
-              )}
-            </button>
-          )}
-          <div className="flex items-center gap-2 flex-1">
-            {item.type === 'folder' ? (
-              expandedFolders.has(item.id) ? (
-                <FaFolderOpen className="w-4 h-4 text-yellow-200/90" />
-              ) : (
-                <FaFolder className="w-4 h-4 text-yellow-200/90" />
-              )
-            ) : (
-              <FaFile className="w-4 h-4 text-white/70" />
-            )}
-            <span className="text-sm">{item.name}</span>
-          </div>
-        </div>
-        {item.type === 'folder' && expandedFolders.has(item.id) && item.children && (
-          <div className="ml-2">
-            {renderFileTree(item.children, level + 1)}
-          </div>
-        )}
-      </div>
-    ))
-  }
 
   const handleItemClick = (type: 'file' | 'folder') => {
     if (type === 'folder') {

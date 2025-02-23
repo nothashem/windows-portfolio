@@ -4,7 +4,8 @@ import { useState } from 'react'
 import { 
   FaTrash, 
   FaUndo, 
-  FaEllipsisH 
+  FaEllipsisH,
+  FaTrashAlt
 } from 'react-icons/fa'
 import { WindowFrame } from './window/WindowFrame'
 
