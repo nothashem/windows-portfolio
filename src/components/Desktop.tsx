@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import Taskbar from './Taskbar'
 import DesktopIcon from './DesktopIcon'
 import { SpotifyApp } from './SpotifyApp'

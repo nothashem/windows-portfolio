@@ -6,14 +6,6 @@ import {
   FaFolderOpen,
   FaChevronRight, 
   FaChevronDown,
-  FaArrowLeft,
-  FaArrowRight,
-  FaRedo,
-  FaSearch,
-  FaEllipsisH,
-  FaHome,
-  FaDownload,
-  FaDesktop,
   FaFile
 } from 'react-icons/fa'
 import { WindowFrame } from './window/WindowFrame'
@@ -41,8 +33,8 @@ const SAMPLE_FILES = [
 ]
 
 export const FileExplorer = ({ isOpen, onClose }: FileExplorerProps) => {
-  const [currentPath, setCurrentPath] = useState<string[]>(['This PC'])
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set())
+  const [selectedFile, setSelectedFile] = useState<string | null>(null)
   const sounds = useSystemSounds()
 
   const fileSystem: FileItem[] = [

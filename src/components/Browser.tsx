@@ -80,6 +80,7 @@ export const Browser = ({ isOpen, onClose, onMinimize }: BrowserProps) => {
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
+      sounds.playClick()
       navigateTo(displayUrl)
     }
   }
