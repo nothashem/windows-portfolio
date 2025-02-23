@@ -4,7 +4,7 @@ import { useEffect } from 'react'
 
 const CustomCursor = () => {
   useEffect(() => {
-    const updatePosition = (e: MouseEvent) => {
+    const updatePosition = () => {
       // We're handling cursor position via CSS
       // This component is just for initialization
     }
