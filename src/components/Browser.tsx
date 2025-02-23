@@ -45,19 +45,13 @@ const DEFAULT_BOOKMARKS: Bookmark[] = [
   },
 ]
 
-export const Browser = ({ 
-  isOpen, 
-  onClose,
-  isMinimized,
-  onMinimize 
-}: { 
-  isOpen: boolean; 
-  onClose: () => void;
-  isMinimized?: boolean;
-  onMinimize?: () => void;
-}) => {
-  const [mounted, setMounted] = useState(false)
-  const [showPopup, setShowPopup] = useState(false)
+interface BrowserProps {
+  isOpen: boolean
+  onClose: () => void
+  onMinimize?: () => void
+}
+
+export const Browser = ({ isOpen, onClose, onMinimize }: BrowserProps) => {
   const [currentUrl, setCurrentUrl] = useState('https://blog.hash8m.com')
   const [displayUrl, setDisplayUrl] = useState('https://blog.hash8m.com')
   const [urlHistory, setUrlHistory] = useState<string[]>(['https://blog.hash8m.com'])
@@ -67,30 +61,23 @@ export const Browser = ({
   const [isBookmarked, setIsBookmarked] = useState(false)
   const sounds = useSystemSounds()
 
-  useEffect(() => {
-    setMounted(true)
-    const timer = setTimeout(() => {
-      setShowPopup(true)
-    }, 6000) // 1 minute in milliseconds
-
-    return () => clearTimeout(timer)
-  }, [])
-
   const handleIframeLoad = () => {
     setIsLoading(false)
   }
 
   const navigateTo = (url: string) => {
-    sounds.playClick()
-    let validUrl = url
-    if (!url.startsWith('http://') && !url.startsWith('https://') && !url.startsWith('/')) {
-      validUrl = `https://${url}`
-    }
-    setCurrentUrl(validUrl)
-    setDisplayUrl(validUrl)
-    setUrlHistory(prev => [...prev.slice(0, historyIndex + 1), validUrl])
+    setCurrentUrl(url)
+    setDisplayUrl(url)
+    setUrlHistory(prev => [...prev.slice(0, historyIndex + 1), url])
     setHistoryIndex(prev => prev + 1)
-    setIsLoading(true)
+  }
+
+  const handleBack = () => {
+    if (historyIndex > 0) {
+      setHistoryIndex(prev => prev - 1)
+      setCurrentUrl(urlHistory[historyIndex - 1])
+      setDisplayUrl(urlHistory[historyIndex - 1])
+    }
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -105,30 +92,16 @@ export const Browser = ({
 
   const handleNavigation = (url: string) => {
     sounds.playClick()
-    setCurrentUrl(url)
+    navigateTo(url)
   }
-
-  const handleBack = () => {
-    if (historyIndex > 0) {
-      sounds.playClick()
-      navigateTo(urlHistory[historyIndex - 1])
-    } else {
-      sounds.playError()
-    }
-  }
-
-  if (!mounted) return null
 
   return (
     <WindowFrame
-      title="Web Browser"
-      icon={<FaGlobe className="w-4 h-4 text-blue-400" />}
+      title="Browser"
+      icon={<FaGlobe />}
       isOpen={isOpen}
       onClose={onClose}
       onMinimize={onMinimize}
-      defaultSize={{ width: '80%', height: '80%' }}
-      defaultPosition={{ x: 60, y: 60 }}
-      isFullScreen={false}
     >
       <div className="flex flex-col h-full w-full bg-[#1a1a1a]">
         {/* Navigation Bar */}
@@ -211,31 +184,6 @@ export const Browser = ({
 
         {/* Content Area */}
         <div className="flex-1 min-h-0 w-full overflow-hidden relative">
-          {showPopup && (
-            <div className="absolute top-4 right-4 bg-blue-600 text-white p-4 rounded-lg shadow-lg z-50 max-w-sm">
-              <div className="flex flex-col gap-3">
-                <p className="font-semibold">Interested in building the future?</p>
-                <p>Join Tamara and be part of the revolution!</p>
-                <div className="flex justify-end gap-2">
-                  <button 
-                    onClick={() => {
-                      navigateTo('https://tamara.co/careers');
-                      setShowPopup(false);
-                    }}
-                    className="px-4 py-2 bg-white text-blue-600 rounded hover:bg-blue-50"
-                  >
-                    Learn More
-                  </button>
-                  <button 
-                    onClick={() => setShowPopup(false)}
-                    className="px-4 py-2 bg-blue-700 rounded hover:bg-blue-800"
-                  >
-                    Close
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
           {isLoading && (
             <div className="absolute top-0 left-0 w-full h-1 bg-[#1a1a1a]">
               <div className="h-full bg-blue-500 animate-pulse" />
