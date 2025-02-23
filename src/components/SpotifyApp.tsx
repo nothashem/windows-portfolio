@@ -267,18 +267,19 @@ export const SpotifyApp = ({ isOpen, onClose }: { isOpen: boolean; onClose: () =
 
           {/* Playback Controls */}
           <div className="flex items-center gap-6">
-          <FaStepForward className="w-4 h-4 text-white/70 hover:text-white cursor-pointer" />            <button
-              onClick={handlePlayPause}
-              className="w-8 h-8 rounded-full bg-white flex items-center justify-center hover:scale-105 transition-transform"
-            >
-              {isPlaying ? (
-                <FaPause className="w-4 h-4 text-black" />
-              ) : (
-                <FaPlay className="w-4 h-4 text-black ml-1" />
-              )}
-            </button>
-            <FaStepBackward className="w-4 h-4 text-white/70 hover:text-white cursor-pointer" />
-          </div>
+  <FaStepBackward className="w-4 h-4 text-white/70 hover:text-white cursor-pointer" />
+  <button
+    onClick={handlePlayPause}
+    className="w-8 h-8 rounded-full bg-white flex items-center justify-center hover:scale-105 transition-transform"
+  >
+    {isPlaying ? (
+      <FaPause className="w-4 h-4 text-black" />
+    ) : (
+      <FaPlay className="w-4 h-4 text-black ml-1" />
+    )}
+  </button>
+  <FaStepForward className="w-4 h-4 text-white/70 hover:text-white cursor-pointer" />
+</div>
 
           {/* Volume Control */}
           <div className="flex items-center gap-2">
