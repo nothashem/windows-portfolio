@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { FaPlay, FaPause, FaStepForward, FaStepBackward, FaVolumeUp } from 'react-icons/fa'
+import { FaPlay, FaPause, FaStepForward, FaStepBackward, FaVolumeUp, FaVolumeMute } from 'react-icons/fa'
 import { WindowFrame } from './window/WindowFrame'
 import { useSystemSounds } from '@/hooks/useSystemSounds'
 import Image from 'next/image'
@@ -41,7 +41,13 @@ const SAMPLE_SONGS: Song[] = [
   }
 ]
 
-export const SpotifyApp = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
+interface SpotifyAppProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onMinimize?: () => void;
+}
+
+export const SpotifyApp = ({ isOpen, onClose, onMinimize }: SpotifyAppProps) => {
   const [isPlaying, setIsPlaying] = useState(false)
   const [currentSong, setCurrentSong] = useState<Song>(SAMPLE_SONGS[0])
   const [progress, setProgress] = useState<SongProgress>({
@@ -52,7 +58,7 @@ export const SpotifyApp = ({ isOpen, onClose }: { isOpen: boolean; onClose: () =
   const audioRef = useRef<HTMLAudioElement>(null)
   const progressInterval = useRef<NodeJS.Timeout | undefined>(undefined)
   const sounds = useSystemSounds()
-  const { globalVolume, isMuted } = useVolume()
+  const { globalVolume, isMuted, setGlobalVolume, setIsMuted } = useVolume()
 
   // Load cached progress when component mounts
   useEffect(() => {
@@ -111,12 +117,24 @@ export const SpotifyApp = ({ isOpen, onClose }: { isOpen: boolean; onClose: () =
 
   useEffect(() => {
     const currentAudio = audioRef.current
-    if (currentAudio) {
-      currentAudio.volume = isMuted ? 0 : globalVolume / 100
+    if (!currentAudio) return
+
+    const updateVolume = () => {
+      const effectiveVolume = isMuted ? 0 : globalVolume / 100
+      if (currentAudio.volume !== effectiveVolume) {
+        currentAudio.volume = effectiveVolume
+      }
     }
+
+    // Initial volume setup
+    updateVolume()
+
+    // Add event listener for volume changes
+    currentAudio.addEventListener('play', updateVolume)
+
     return () => {
       if (currentAudio) {
-        currentAudio.pause()
+        currentAudio.removeEventListener('play', updateVolume)
       }
     }
   }, [globalVolume, isMuted])
@@ -185,8 +203,9 @@ export const SpotifyApp = ({ isOpen, onClose }: { isOpen: boolean; onClose: () =
       icon={<FaPlay className="w-4 h-4 text-green-400" />}
       isOpen={isOpen}
       onClose={onClose}
+      onMinimize={onMinimize}
       defaultSize={{ width: '800px', height: '600px' }}
-      defaultPosition={{ x: 80, y: 80 }}
+      defaultPosition={{ x: 100, y: 60 }}
     >
       <div className="flex h-full bg-[#121212] text-white">
         {/* Left Sidebar */}
@@ -283,11 +302,34 @@ export const SpotifyApp = ({ isOpen, onClose }: { isOpen: boolean; onClose: () =
 
           {/* Volume Control */}
           <div className="flex items-center gap-2">
-            <FaVolumeUp className="w-4 h-4 text-white/70" />
-            <div className="w-24 h-1 bg-white/20 rounded-lg">
-              <div 
-                className="h-full bg-white rounded-lg" 
-                style={{ width: `${globalVolume}%` }}
+            <button
+              onClick={() => {
+                setIsMuted(!isMuted)
+                sounds.playClick()
+              }}
+              className="hover:text-white transition-colors"
+            >
+              {isMuted || globalVolume === 0 ? (
+                <FaVolumeMute className="w-4 h-4 text-white/70" />
+              ) : (
+                <FaVolumeUp className="w-4 h-4 text-white/70" />
+              )}
+            </button>
+            <div className="relative w-24">
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={isMuted ? 0 : globalVolume}
+                onChange={(e) => {
+                  const newVolume = Number(e.target.value)
+                  setGlobalVolume(newVolume)
+                  if (newVolume > 0 && isMuted) {
+                    setIsMuted(false)
+                  }
+                  sounds.playSlider()
+                }}
+                className="w-full h-1 bg-white/20 rounded-lg appearance-none cursor-pointer accent-white"
               />
             </div>
           </div>

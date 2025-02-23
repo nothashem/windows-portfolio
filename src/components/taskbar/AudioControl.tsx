@@ -25,8 +25,12 @@ export const AudioControl = () => {
 
   const handleVolumeChange = (newVolume: number) => {
     sounds.playSlider()
-    setGlobalVolume(newVolume)
-    if (newVolume === 0) {
+    // Ensure volume is within bounds
+    const boundedVolume = Math.max(0, Math.min(100, newVolume))
+    setGlobalVolume(boundedVolume)
+    
+    // Update mute state based on volume
+    if (boundedVolume === 0) {
       setIsMuted(true)
     } else if (isMuted) {
       setIsMuted(false)

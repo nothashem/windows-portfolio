@@ -11,7 +11,13 @@ interface Note {
   lastModified: string
 }
 
-export const Notepad = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
+interface NotepadProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onMinimize?: () => void;
+}
+
+export const Notepad = ({ isOpen, onClose, onMinimize }: NotepadProps) => {
   const [content, setContent] = useState('')
   const [savedNotes, setSavedNotes] = useState<Note[]>([])
   const [currentNoteId, setCurrentNoteId] = useState<string | null>(null)
@@ -135,8 +141,9 @@ export const Notepad = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
       icon={<FaFileAlt className="w-4 h-4 text-yellow-400" />}
       isOpen={isOpen}
       onClose={onClose}
+      onMinimize={onMinimize}
       defaultSize={{ width: '600px', height: '400px' }}
-      defaultPosition={{ x: 120, y: 120 }}
+      defaultPosition={{ x: 140, y: 80 }}
     >
       <div className="flex h-full bg-[#1e1e1e] text-white">
         {/* Sidebar with saved notes */}

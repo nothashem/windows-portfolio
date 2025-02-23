@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { 
   FaArrowLeft, 
   FaArrowRight, 
@@ -8,10 +8,13 @@ import {
   FaStar, 
   FaCog,
   FaLock,
-  FaGlobe
+  FaGlobe,
+  FaExpand,
+  FaCompress
 } from 'react-icons/fa'
 import { WindowFrame } from './window/WindowFrame'
 import { useSystemSounds } from '@/hooks/useSystemSounds'
+import { motion, AnimatePresence } from 'framer-motion'
 
 interface Bookmark {
   id: string
@@ -55,26 +58,44 @@ export const Browser = ({ isOpen, onClose, onMinimize }: BrowserProps) => {
   const [urlHistory, setUrlHistory] = useState<string[]>(['https://blog.hash8m.com'])
   const [historyIndex, setHistoryIndex] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
+  const [isFullScreen, setIsFullScreen] = useState(false)
   const [bookmarks] = useState<Bookmark[]>(DEFAULT_BOOKMARKS)
   const [isBookmarked, setIsBookmarked] = useState(false)
   const sounds = useSystemSounds()
+  const [showPopup, setShowPopup] = useState(false)
 
   const handleIframeLoad = () => {
     setIsLoading(false)
   }
 
   const navigateTo = (url: string) => {
-    setCurrentUrl(url)
-    setDisplayUrl(url)
-    setUrlHistory(prev => [...prev.slice(0, historyIndex + 1), url])
-    setHistoryIndex(prev => prev + 1)
+    // Add http:// if missing
+    const formattedUrl = url.startsWith('http') ? url : `https://${url}`
+    setCurrentUrl(formattedUrl)
+    setDisplayUrl(formattedUrl)
+    
+    // Update history
+    const newHistory = urlHistory.slice(0, historyIndex + 1)
+    newHistory.push(formattedUrl)
+    setUrlHistory(newHistory)
+    setHistoryIndex(newHistory.length - 1)
   }
 
   const handleBack = () => {
     if (historyIndex > 0) {
       setHistoryIndex(prev => prev - 1)
-      setCurrentUrl(urlHistory[historyIndex - 1])
-      setDisplayUrl(urlHistory[historyIndex - 1])
+      const prevUrl = urlHistory[historyIndex - 1]
+      setCurrentUrl(prevUrl)
+      setDisplayUrl(prevUrl)
+    }
+  }
+
+  const handleForward = () => {
+    if (historyIndex < urlHistory.length - 1) {
+      setHistoryIndex(prev => prev + 1)
+      const nextUrl = urlHistory[historyIndex + 1]
+      setCurrentUrl(nextUrl)
+      setDisplayUrl(nextUrl)
     }
   }
 
@@ -89,6 +110,18 @@ export const Browser = ({ isOpen, onClose, onMinimize }: BrowserProps) => {
     setIsBookmarked(!isBookmarked)
   }
 
+  const toggleFullScreen = () => {
+    setIsFullScreen(!isFullScreen)
+  }
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowPopup(true)
+    }, 6000) // Show after 6 seconds
+
+    return () => clearTimeout(timer)
+  }, [])
+
   return (
     <WindowFrame
       title="Browser"
@@ -96,6 +129,9 @@ export const Browser = ({ isOpen, onClose, onMinimize }: BrowserProps) => {
       isOpen={isOpen}
       onClose={onClose}
       onMinimize={onMinimize}
+      isFullScreen={isFullScreen}
+      defaultSize={{ width: '900px', height: '600px' }}
+      defaultPosition={{ x: 40, y: 40 }}
     >
       <div className="flex flex-col h-full w-full bg-[#1a1a1a]">
         {/* Navigation Bar */}
@@ -107,18 +143,16 @@ export const Browser = ({ isOpen, onClose, onMinimize }: BrowserProps) => {
               className={`p-2 rounded-md ${
                 historyIndex > 0 ? 'hover:bg-white/10 text-white' : 'text-white/30'
               }`}
-              aria-label="Go back"
             >
               <FaArrowLeft className="w-4 h-4" />
             </button>
             
             <button
-              onClick={() => historyIndex < urlHistory.length - 1 && navigateTo(urlHistory[historyIndex + 1])}
+              onClick={handleForward}
               disabled={historyIndex >= urlHistory.length - 1}
               className={`p-2 rounded-md ${
                 historyIndex < urlHistory.length - 1 ? 'hover:bg-white/10 text-white' : 'text-white/30'
               }`}
-              aria-label="Go forward"
             >
               <FaArrowRight className="w-4 h-4" />
             </button>
@@ -126,7 +160,6 @@ export const Browser = ({ isOpen, onClose, onMinimize }: BrowserProps) => {
             <button
               onClick={() => navigateTo(currentUrl)}
               className="p-2 rounded-md hover:bg-white/10 text-white"
-              aria-label="Reload page"
             >
               <FaRedo className="w-4 h-4" />
             </button>
@@ -140,7 +173,6 @@ export const Browser = ({ isOpen, onClose, onMinimize }: BrowserProps) => {
               onChange={(e) => setDisplayUrl(e.target.value)}
               onKeyDown={handleKeyDown}
               className="w-full bg-transparent border-none outline-none text-white text-sm"
-              placeholder="Enter URL or search"
             />
           </div>
 
@@ -153,9 +185,13 @@ export const Browser = ({ isOpen, onClose, onMinimize }: BrowserProps) => {
           </button>
 
           <button
+            onClick={toggleFullScreen}
             className="p-2 rounded-md hover:bg-white/10 text-white"
-            aria-label="Settings"
           >
+            {isFullScreen ? <FaCompress className="w-4 h-4" /> : <FaExpand className="w-4 h-4" />}
+          </button>
+
+          <button className="p-2 rounded-md hover:bg-white/10 text-white">
             <FaCog className="w-4 h-4" />
           </button>
         </div>
@@ -183,15 +219,46 @@ export const Browser = ({ isOpen, onClose, onMinimize }: BrowserProps) => {
               <div className="h-full bg-blue-500 animate-pulse" />
             </div>
           )}
+          <AnimatePresence>
+            {showPopup && (
+              <motion.div
+                initial={{ opacity: 0, y: -20, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -20, scale: 0.95 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
+                className="absolute top-4 right-4 bg-blue-600 text-white p-4 rounded-lg shadow-lg z-50 max-w-sm"
+              >
+                <div className="flex flex-col gap-3">
+                  <p className="font-semibold">Interested in building the future?</p>
+                  <p>Join Tamara and Build the Future of Finance!</p>
+                  <div className="flex justify-end gap-2">
+                    <motion.button 
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => {
+                        navigateTo('https://tamara.co/careers')
+                        setShowPopup(false)
+                      }}
+                      className="px-4 py-2 bg-white text-blue-600 rounded hover:bg-blue-50"
+                    >
+                      Learn More
+                    </motion.button>
+                    <motion.button 
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => setShowPopup(false)}
+                      className="px-4 py-2 bg-blue-700 rounded hover:bg-blue-800"
+                    >
+                      Close
+                    </motion.button>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
           <iframe
             src={currentUrl}
-            style={{
-              width: '100%',
-              height: '100%',
-              border: 'none',
-              display: 'block',
-              backgroundColor: 'white'
-            }}
+            className="w-full h-full border-none bg-white"
             sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
             referrerPolicy="no-referrer"
             onLoad={handleIframeLoad}

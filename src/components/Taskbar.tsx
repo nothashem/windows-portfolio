@@ -1,6 +1,5 @@
 'use client'
 
-import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { FaMusic, FaFileAlt, FaGlobe } from 'react-icons/fa'
 import { TaskbarIcon } from './TaskbarIcon'
@@ -17,6 +16,8 @@ interface TaskbarProps {
   onSpotifyToggle: () => void
   isNotepadOpen: boolean
   onNotepadToggle: () => void
+  activeWindow: string | null
+  setActiveWindow: React.Dispatch<React.SetStateAction<string | null>>
 }
 
 export const Taskbar: React.FC<TaskbarProps> = ({
@@ -27,10 +28,10 @@ export const Taskbar: React.FC<TaskbarProps> = ({
   isSpotifyOpen,
   onSpotifyToggle,
   isNotepadOpen,
-  onNotepadToggle
+  onNotepadToggle,
+  activeWindow,
+  setActiveWindow
 }) => {
-  const [activeWindow, setActiveWindow] = useState<string | null>(null)
-
   return (
     <>
       {/* Start Menu */}

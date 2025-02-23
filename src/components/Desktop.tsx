@@ -20,6 +20,7 @@ export const Desktop = ({ wallpaper }: DesktopProps) => {
   const [isSpotifyOpen, setIsSpotifyOpen] = useState(false)
   const [isBrowserOpen, setIsBrowserOpen] = useState(false)
   const [isNotepadOpen, setIsNotepadOpen] = useState(false)
+  const [activeWindow, setActiveWindow] = useState<string | null>(null)
 
   const sounds = useSystemSounds()
 
@@ -28,14 +29,18 @@ export const Desktop = ({ wallpaper }: DesktopProps) => {
     sounds.playStartup()
   }, [sounds])
 
-  const handleStartMenuToggle = () => {
-    sounds.playStartMenu()
-    setIsStartMenuOpen(prev => !prev)
+  const handleWindowOpen = (opener: () => void) => {
+    opener()
+    setIsStartMenuOpen(false)
   }
 
-  const handleWindowOpen = (setWindowState: (state: boolean) => void) => {
-    sounds.playNotification()
-    setWindowState(true)
+  const handleWindowToggle = (isOpen: boolean, setOpen: (open: boolean) => void, windowId: string) => {
+    if (isOpen) {
+      setOpen(false)
+    } else {
+      setOpen(true)
+      setActiveWindow(windowId)
+    }
   }
 
   if (!mounted) return null
@@ -83,15 +88,17 @@ export const Desktop = ({ wallpaper }: DesktopProps) => {
             <SpotifyApp
               isOpen={isSpotifyOpen}
               onClose={() => setIsSpotifyOpen(false)}
+              onMinimize={() => handleWindowToggle(isSpotifyOpen, setIsSpotifyOpen, 'spotify')}
             />
             <Browser
               isOpen={isBrowserOpen}
               onClose={() => setIsBrowserOpen(false)}
-              onMinimize={() => setIsBrowserOpen(false)}
+              onMinimize={() => handleWindowToggle(isBrowserOpen, setIsBrowserOpen, 'browser')}
             />
             <Notepad
               isOpen={isNotepadOpen}
               onClose={() => setIsNotepadOpen(false)}
+              onMinimize={() => handleWindowToggle(isNotepadOpen, setIsNotepadOpen, 'notepad')}
             />
           </div>
         </div>
@@ -100,13 +107,15 @@ export const Desktop = ({ wallpaper }: DesktopProps) => {
         <div className="absolute inset-x-0 bottom-0 z-30">
           <Taskbar 
             isStartMenuOpen={isStartMenuOpen}
-            onStartMenuToggle={handleStartMenuToggle}
+            onStartMenuToggle={() => setIsStartMenuOpen(!isStartMenuOpen)}
             isBrowserOpen={isBrowserOpen}
-            onBrowserToggle={() => setIsBrowserOpen(!isBrowserOpen)}
+            onBrowserToggle={() => handleWindowToggle(isBrowserOpen, setIsBrowserOpen, 'browser')}
             isSpotifyOpen={isSpotifyOpen}
-            onSpotifyToggle={() => setIsSpotifyOpen(!isSpotifyOpen)}
+            onSpotifyToggle={() => handleWindowToggle(isSpotifyOpen, setIsSpotifyOpen, 'spotify')}
             isNotepadOpen={isNotepadOpen}
-            onNotepadToggle={() => setIsNotepadOpen(!isNotepadOpen)}
+            onNotepadToggle={() => handleWindowToggle(isNotepadOpen, setIsNotepadOpen, 'notepad')}
+            activeWindow={activeWindow}
+            setActiveWindow={setActiveWindow}
           />
         </div>
 
