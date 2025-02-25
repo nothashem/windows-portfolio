@@ -70,10 +70,21 @@ export const SpotifyApp = ({ isOpen, onClose, onMinimize }: SpotifyAppProps) => 
         setCurrentSong(cachedSong)
         if (audioRef.current) {
           audioRef.current.currentTime = parsed.currentTime
+          // Load the audio to get metadata
+          audioRef.current.load()
         }
       }
     }
   }, [])
+
+  // Add new effect to handle initial audio loading
+  useEffect(() => {
+    const audio = audioRef.current
+    if (!audio) return
+
+    // Load the audio to get metadata when component mounts
+    audio.load()
+  }, []) // Empty dependency array means this runs once on mount
 
   // Save progress to cache when component unmounts or window closes
   useEffect(() => {
