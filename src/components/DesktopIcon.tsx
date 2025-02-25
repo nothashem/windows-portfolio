@@ -60,7 +60,6 @@ const DesktopIcon = forwardRef<HTMLDivElement, DesktopIconProps>(({
         onClick()
       }}
       onKeyDown={handleKeyDown}
-      onMouseEnter={() => sounds.playHover()}
       draggable
       onDragStart={onDragStart}
       role="button"

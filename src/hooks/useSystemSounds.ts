@@ -19,7 +19,6 @@ export const useSystemSounds = () => {
   const [playMinimize] = useSound('/sounds/minimize.mp3', soundConfig);
   const [playMaximize] = useSound('/sounds/maximize.mp3', soundConfig);
   const [playError] = useSound('/sounds/error.mp3', soundConfig);
-  const [playHover] = useSound('/sounds/hover.mp3', { ...soundConfig, volume: effectiveVolume * 0.1 });
   const [playStartup] = useSound('/sounds/startup.mp3', soundConfig);
   const [playNotification] = useSound('/sounds/notification.mp3', soundConfig);
   const [playStartMenu] = useSound('/sounds/start-menu.mp3', soundConfig);
@@ -32,7 +31,6 @@ export const useSystemSounds = () => {
     playMinimize,
     playMaximize,
     playError,
-    playHover,
     playStartup,
     playNotification,
     playStartMenu,

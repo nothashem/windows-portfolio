@@ -1,7 +1,7 @@
 'use client'
 
 import { motion, AnimatePresence } from 'framer-motion'
-import { FaMusic, FaFileAlt, FaGlobe } from 'react-icons/fa'
+import { FaMusic, FaFileAlt, FaGlobe, FaTable } from 'react-icons/fa'
 import { TaskbarIcon } from './TaskbarIcon'
 import { Clock } from './taskbar/Clock'
 import { AudioControl } from './taskbar/AudioControl'
@@ -18,6 +18,8 @@ interface TaskbarProps {
   onNotepadToggle: () => void
   activeWindow: string | null
   setActiveWindow: React.Dispatch<React.SetStateAction<string | null>>
+  isExcelOpen: boolean
+  onExcelToggle: () => void
 }
 
 export const Taskbar: React.FC<TaskbarProps> = ({
@@ -30,7 +32,9 @@ export const Taskbar: React.FC<TaskbarProps> = ({
   isNotepadOpen,
   onNotepadToggle,
   activeWindow,
-  setActiveWindow
+  setActiveWindow,
+  isExcelOpen,
+  onExcelToggle
 }) => {
   return (
     <>
@@ -43,6 +47,7 @@ export const Taskbar: React.FC<TaskbarProps> = ({
             onOpenBrowser={() => onBrowserToggle()}
             onOpenSpotify={() => onSpotifyToggle()}
             onOpenNotepad={() => onNotepadToggle()}
+            onOpenExcel={() => onExcelToggle()}
           />
         )}
       </AnimatePresence>
@@ -59,12 +64,15 @@ export const Taskbar: React.FC<TaskbarProps> = ({
         <div className="flex items-center h-full">
           <motion.button 
             key="start-button"
-            className={`h-full w-12 flex items-center justify-center group
-                       transition-all duration-150 ease-in-out mt-[2px]`}
-            onClick={() => onStartMenuToggle()}
+            className="h-full px-3 flex items-center justify-center group
+                     transition-all duration-150 ease-in-out relative"
+            onClick={(e) => {
+              e.stopPropagation(); // Prevent click from bubbling
+              onStartMenuToggle();
+            }}
           >
             {/* Background hover effect */}
-            <div className={`absolute inset-0 -bottom-[2px] transition-all duration-200
+            <div className={`absolute inset-0 transition-all duration-200
                            ${isStartMenuOpen ? 'bg-white/15' : 'group-hover:bg-white/5'}`}
             />
             
@@ -124,6 +132,16 @@ export const Taskbar: React.FC<TaskbarProps> = ({
               setActiveWindow('notepad')
             }}
             tooltip="Notepad"
+          />
+          <TaskbarIcon
+            icon={<FaTable className="w-5 h-5" />}
+            isOpen={isExcelOpen}
+            isActive={activeWindow === 'excel'}
+            onClick={() => {
+              onExcelToggle()
+              setActiveWindow('excel')
+            }}
+            tooltip="Excel"
           />
         </div>
 

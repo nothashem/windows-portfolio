@@ -7,8 +7,9 @@ import { SpotifyApp } from './SpotifyApp'
 import { Browser } from './Browser'
 import { useSystemSounds } from '@/hooks/useSystemSounds'
 import { Notepad } from './Notepad'
-import { FaFileAlt } from 'react-icons/fa'
+import { FaFileAlt, FaTable } from 'react-icons/fa'
 import { StartMenu } from './StartMenu'
+import { Excel } from './Excel'
 
 interface DesktopProps {
   wallpaper: string
@@ -20,6 +21,7 @@ export const Desktop = ({ wallpaper }: DesktopProps) => {
   const [isSpotifyOpen, setIsSpotifyOpen] = useState(false)
   const [isBrowserOpen, setIsBrowserOpen] = useState(false)
   const [isNotepadOpen, setIsNotepadOpen] = useState(false)
+  const [isExcelOpen, setIsExcelOpen] = useState(false)
   const [activeWindow, setActiveWindow] = useState<string | null>(null)
 
   const sounds = useSystemSounds()
@@ -79,6 +81,13 @@ export const Desktop = ({ wallpaper }: DesktopProps) => {
               selected={false}
               inSelectionBox={false}
             />
+            <DesktopIcon
+              icon={<FaTable className="w-8 h-8 text-green-600" />}
+              label="Excel"
+              onClick={() => handleWindowOpen(() => setIsExcelOpen(true))}
+              selected={false}
+              inSelectionBox={false}
+            />
           </div>
         </div>
 
@@ -100,6 +109,11 @@ export const Desktop = ({ wallpaper }: DesktopProps) => {
               onClose={() => setIsNotepadOpen(false)}
               onMinimize={() => handleWindowToggle(isNotepadOpen, setIsNotepadOpen, 'notepad')}
             />
+            <Excel
+              isOpen={isExcelOpen}
+              onClose={() => setIsExcelOpen(false)}
+              onMinimize={() => handleWindowToggle(isExcelOpen, setIsExcelOpen, 'excel')}
+            />
           </div>
         </div>
 
@@ -114,6 +128,8 @@ export const Desktop = ({ wallpaper }: DesktopProps) => {
             onSpotifyToggle={() => handleWindowToggle(isSpotifyOpen, setIsSpotifyOpen, 'spotify')}
             isNotepadOpen={isNotepadOpen}
             onNotepadToggle={() => handleWindowToggle(isNotepadOpen, setIsNotepadOpen, 'notepad')}
+            isExcelOpen={isExcelOpen}
+            onExcelToggle={() => handleWindowToggle(isExcelOpen, setIsExcelOpen, 'excel')}
             activeWindow={activeWindow}
             setActiveWindow={setActiveWindow}
           />
@@ -125,6 +141,7 @@ export const Desktop = ({ wallpaper }: DesktopProps) => {
           onOpenBrowser={() => setIsBrowserOpen(true)}
           onOpenSpotify={() => setIsSpotifyOpen(true)}
           onOpenNotepad={() => setIsNotepadOpen(true)}
+          onOpenExcel={() => setIsExcelOpen(true)}
         />
       </main>
     </div>

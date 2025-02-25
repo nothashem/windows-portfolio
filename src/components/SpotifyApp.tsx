@@ -35,7 +35,7 @@ const SAMPLE_SONGS: Song[] = [
     id: '2',
     title: 'Dark Beach',
     artist: 'Pastel Ghost',
-    duration: '3:45',
+    duration: '3:42',
     coverArt: '/song.jpeg',
     audioSrc: '/sounds/dark.mp3'
   }
@@ -56,7 +56,6 @@ export const SpotifyApp = ({ isOpen, onClose, onMinimize }: SpotifyAppProps) => 
     songId: SAMPLE_SONGS[0].id
   })
   const audioRef = useRef<HTMLAudioElement>(null)
-  const progressInterval = useRef<NodeJS.Timeout | undefined>(undefined)
   const sounds = useSystemSounds()
   const { globalVolume, isMuted, setGlobalVolume, setIsMuted } = useVolume()
 
@@ -90,30 +89,34 @@ export const SpotifyApp = ({ isOpen, onClose, onMinimize }: SpotifyAppProps) => 
     }
   }, [currentSong.id])
 
-  // Update progress bar
+  // Replace the interval-based progress update with timeupdate event
   useEffect(() => {
-    if (isPlaying) {
-      progressInterval.current = setInterval(() => {
-        if (audioRef.current) {
-          setProgress({
-            currentTime: audioRef.current.currentTime,
-            duration: audioRef.current.duration,
-            songId: currentSong.id
-          })
-        }
-      }, 1000)
-    } else {
-      if (progressInterval.current) {
-        clearInterval(progressInterval.current)
-      }
+    const audio = audioRef.current
+    if (!audio) return
+
+    const handleTimeUpdate = () => {
+      setProgress({
+        currentTime: audio.currentTime,
+        duration: audio.duration,
+        songId: currentSong.id
+      })
     }
 
-    return () => {
-      if (progressInterval.current) {
-        clearInterval(progressInterval.current)
-      }
+    const handleLoadedMetadata = () => {
+      setProgress(prev => ({
+        ...prev,
+        duration: audio.duration,
+      }))
     }
-  }, [isPlaying, currentSong.id])
+
+    audio.addEventListener('timeupdate', handleTimeUpdate)
+    audio.addEventListener('loadedmetadata', handleLoadedMetadata)
+
+    return () => {
+      audio.removeEventListener('timeupdate', handleTimeUpdate)
+      audio.removeEventListener('loadedmetadata', handleLoadedMetadata)
+    }
+  }, [currentSong.id])
 
   useEffect(() => {
     const currentAudio = audioRef.current
@@ -183,7 +186,7 @@ export const SpotifyApp = ({ isOpen, onClose, onMinimize }: SpotifyAppProps) => 
     }
   }
 
-  const handleSongSelect = (song: Song) => {
+  const handleSongSelect = async (song: Song) => {
     if (currentSong.id === song.id) {
       handlePlayPause()
       return
@@ -193,8 +196,25 @@ export const SpotifyApp = ({ isOpen, onClose, onMinimize }: SpotifyAppProps) => 
       audioRef.current.pause()
       audioRef.current.currentTime = 0
     }
-    setIsPlaying(false)
     setCurrentSong(song)
+    setIsPlaying(false)  // Reset playing state temporarily
+
+    // Add slight delay to allow audio to load
+    setTimeout(async () => {
+      try {
+        if (audioRef.current) {
+          const playPromise = audioRef.current.play()
+          if (playPromise) {
+            await playPromise
+            setIsPlaying(true)
+          }
+        }
+      } catch (error) {
+        console.error("Playback error:", error)
+        sounds.playError()
+        setIsPlaying(false)
+      }
+    }, 100)
   }
 
   return (
@@ -256,13 +276,13 @@ export const SpotifyApp = ({ isOpen, onClose, onMinimize }: SpotifyAppProps) => 
               <input
                 type="range"
                 min="0"
-                max={progress.duration || 100}
+                max={progress.duration || 0}
                 value={progress.currentTime}
                 onChange={(e) => handleProgressChange(e)}
                 className="w-full h-1 bg-white/20 rounded-lg appearance-none cursor-pointer accent-white"
               />
             </div>
-            <span>{progress.duration ? formatTime(progress.duration) : currentSong.duration}</span>
+            <span>{formatTime(progress.duration)}</span>
           </div>
         </div>
 

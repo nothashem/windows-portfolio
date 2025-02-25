@@ -5,7 +5,6 @@ import { useState, useEffect } from 'react'
 export const Clock = () => {
   const [mounted, setMounted] = useState(false)
   const [time, setTime] = useState<Date | null>(null)
-  const [isHovered, setIsHovered] = useState(false)
 
   useEffect(() => {
     setMounted(true)
@@ -41,16 +40,14 @@ export const Clock = () => {
   return (
     <div
       className="h-full px-3 hover:bg-white/10 transition-colors duration-200 
-                 cursor-default flex flex-col justify-center items-end"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+                 cursor-default flex flex-col justify-center items-end group"
     >
       <span className="leading-tight text-sm text-white">
         {formatTime}
       </span>
       <span 
-        className={`leading-tight text-xs transition-opacity duration-200
-                   ${isHovered ? 'text-white opacity-100' : 'text-white/80 opacity-80'}`}
+        className="leading-tight text-xs text-white/80 group-hover:text-white
+                   transition-colors duration-200"
       >
         {formatDate}
       </span>

@@ -15,6 +15,7 @@ import {
 import { WindowFrame } from './window/WindowFrame'
 import { useSystemSounds } from '@/hooks/useSystemSounds'
 import { motion, AnimatePresence } from 'framer-motion'
+import Image from 'next/image'
 
 interface Bookmark {
   id: string
@@ -25,6 +26,13 @@ interface Bookmark {
 }
 
 const DEFAULT_BOOKMARKS: Bookmark[] = [
+  // {
+  //   id: 'amazon',
+  //   title: 'Amazon',
+  //   url: 'https://amazon.com',
+  //   icon: '🛒',
+  //   favicon: '/icons/amazon-favicon.png'
+  // },
   {
     id: 'blog',
     title: 'Blog',
@@ -52,6 +60,9 @@ interface BrowserProps {
   onMinimize?: () => void
 }
 
+type CheckoutStep = 'select-payment' | 'card-review' | 'processing' | 'complete' | 
+  'tamara-review' | 'tamara-otp' | 'tamara-processing';
+
 export const Browser = ({ isOpen, onClose, onMinimize }: BrowserProps) => {
   const [currentUrl, setCurrentUrl] = useState('https://blog.hash8m.com')
   const [displayUrl, setDisplayUrl] = useState('https://blog.hash8m.com')
@@ -63,6 +74,8 @@ export const Browser = ({ isOpen, onClose, onMinimize }: BrowserProps) => {
   const [isBookmarked, setIsBookmarked] = useState(false)
   const sounds = useSystemSounds()
   const [showPopup, setShowPopup] = useState(false)
+  const [isAmazonCheckout, setIsAmazonCheckout] = useState(false)
+  const [checkoutStep, setCheckoutStep] = useState<CheckoutStep>('select-payment');
 
   const handleIframeLoad = () => {
     setIsLoading(false)
@@ -71,6 +84,22 @@ export const Browser = ({ isOpen, onClose, onMinimize }: BrowserProps) => {
   const navigateTo = (url: string) => {
     // Add http:// if missing
     const formattedUrl = url.startsWith('http') ? url : `https://${url}`
+    
+    // Check if navigating to Amazon
+    const isAmazon = formattedUrl.includes('amazon.sa') || 
+      formattedUrl.includes('amazon.com') ||
+      formattedUrl.includes('checkout.amazon');
+    
+    setIsAmazonCheckout(isAmazon)
+    
+    // Handle checkout step URLs
+    if (isAmazon && formattedUrl.includes('#checkout')) {
+      const step = formattedUrl.split('#checkout-')[1] as CheckoutStep
+      setCheckoutStep(step)
+    } else if (isAmazon) {
+      setCheckoutStep('select-payment')
+    }
+    
     setCurrentUrl(formattedUrl)
     setDisplayUrl(formattedUrl)
     
@@ -87,6 +116,16 @@ export const Browser = ({ isOpen, onClose, onMinimize }: BrowserProps) => {
       const prevUrl = urlHistory[historyIndex - 1]
       setCurrentUrl(prevUrl)
       setDisplayUrl(prevUrl)
+      
+      // Handle checkout step navigation
+      if (isAmazonCheckout) {
+        if (prevUrl.includes('#checkout')) {
+          const step = prevUrl.split('#checkout-')[1] as CheckoutStep
+          setCheckoutStep(step)
+        } else {
+          setCheckoutStep('select-payment')
+        }
+      }
     }
   }
 
@@ -96,6 +135,16 @@ export const Browser = ({ isOpen, onClose, onMinimize }: BrowserProps) => {
       const nextUrl = urlHistory[historyIndex + 1]
       setCurrentUrl(nextUrl)
       setDisplayUrl(nextUrl)
+      
+      // Handle checkout step navigation
+      if (isAmazonCheckout) {
+        if (nextUrl.includes('#checkout')) {
+          const step = nextUrl.split('#checkout-')[1] as CheckoutStep
+          setCheckoutStep(step)
+        } else {
+          setCheckoutStep('select-payment')
+        }
+      }
     }
   }
 
@@ -113,6 +162,280 @@ export const Browser = ({ isOpen, onClose, onMinimize }: BrowserProps) => {
   const toggleFullScreen = () => {
     setIsFullScreen(!isFullScreen)
   }
+
+  const handleCardCheckout = () => {
+    navigateTo(`${currentUrl}#checkout-card-review`);
+  };
+
+  const handleConfirmCardPayment = () => {
+    navigateTo(`${currentUrl}#checkout-processing`);
+    // Simulate processing time
+    setTimeout(() => {
+      navigateTo(`${currentUrl}#checkout-complete`);
+    }, 2000);
+  };
+
+  const handleTamaraCheckout = () => {
+    navigateTo(`${currentUrl}#checkout-tamara-review`);
+  };
+
+  const handleTamaraConfirm = () => {
+    navigateTo(`${currentUrl}#checkout-tamara-otp`);
+  };
+
+  const handleTamaraOTP = () => {
+    navigateTo(`${currentUrl}#checkout-tamara-processing`);
+    // Simulate processing time
+    setTimeout(() => {
+      navigateTo(`${currentUrl}#checkout-complete`);
+    }, 2000);
+  };
+
+  const renderCheckoutStep = () => {
+    switch (checkoutStep) {
+      case 'card-review':
+        return (
+          <div className="w-full max-w-2xl mx-auto p-8 text-black">
+            <h2 className="text-2xl font-medium mb-6">Review your order</h2>
+            
+            <div className="bg-[#f3f3f3] p-4 rounded-lg mb-6">
+              <div className="flex justify-between mb-2">
+                <span>Order total:</span>
+                <span className="font-bold">SAR 219.00</span>
+              </div>
+              <div className="text-sm">
+                By placing your order, you agree to Amazon&apos;s privacy notice and conditions of use.
+              </div>
+            </div>
+
+            <button
+              onClick={handleConfirmCardPayment}
+              className="w-full bg-[#ffd814] hover:bg-[#f7ca00] text-black py-3 rounded-lg font-medium"
+            >
+              Place your order
+            </button>
+          </div>
+        );
+
+      case 'processing':
+        return (
+          <div className="w-full h-full flex items-center justify-center">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-[#232f3e] mx-auto mb-4"></div>
+              <p className="text-lg text-black">Processing your payment...</p>
+            </div>
+          </div>
+        );
+
+      case 'complete':
+        return (
+          <div className="w-full max-w-2xl mx-auto p-8 text-black text-center">
+            <div className="text-green-600 mb-4 text-5xl">✓</div>
+            <h2 className="text-2xl font-medium mb-4">Order placed, thank you!</h2>
+            <p className="mb-6">Confirmation will be sent to your email.</p>
+            <div className="bg-[#f3f3f3] p-4 rounded-lg mb-6 text-left">
+              <h3 className="font-medium mb-2">Order Details</h3>
+              <p>Order #: 123-4567890-1234567</p>
+              <p>Total: SAR 219.00</p>
+              <p>Estimated delivery: 3-5 business days</p>
+            </div>
+            <button
+              onClick={() => {
+                setCheckoutStep('select-payment');
+                navigateTo('https://amazon.sa');
+              }}
+              className="bg-[#232f3e] text-white px-6 py-2 rounded hover:bg-[#374151]"
+            >
+              Continue Shopping
+            </button>
+          </div>
+        );
+
+      case 'tamara-review':
+        return (
+          <div className="w-full max-w-2xl mx-auto p-8 text-black">
+            <h2 className="text-2xl font-medium mb-6">Tamara - Pay in 4</h2>
+            
+            <div className="bg-[#f3f3f3] p-4 rounded-lg mb-6">
+              <div className="flex justify-between mb-4">
+                <span>Order total:</span>
+                <span className="font-bold">SAR 219.00</span>
+              </div>
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span>4 payments of:</span>
+                  <span className="font-bold">SAR 54.75</span>
+                </div>
+                <div className="text-sm text-gray-600">
+                  No fees, 0% interest
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4 mb-6">
+              <div>
+                <label className="block text-sm mb-1">Phone Number</label>
+                <input 
+                  type="tel" 
+                  className="w-full p-2 border border-gray-300 rounded"
+                  placeholder="+966 XX XXX XXXX"
+                />
+              </div>
+            </div>
+
+            <button
+              onClick={handleTamaraConfirm}
+              className="w-full bg-[#2c3e50] hover:bg-[#34495e] text-white py-3 rounded-lg font-medium"
+            >
+              Continue with Tamara
+            </button>
+          </div>
+        );
+
+      case 'tamara-otp':
+        return (
+          <div className="w-full max-w-2xl mx-auto p-8 text-black">
+            <h2 className="text-2xl font-medium mb-6">Verify your phone number</h2>
+            
+            <div className="mb-6">
+              <p className="text-sm text-gray-600 mb-4">
+                We&apos;ve sent a verification code to your phone number
+              </p>
+              <div className="flex gap-2 justify-center">
+                {[1,2,3,4].map((i) => (
+                  <input
+                    key={i}
+                    type="text"
+                    maxLength={1}
+                    className="w-12 h-12 text-center border border-gray-300 rounded"
+                  />
+                ))}
+              </div>
+            </div>
+
+            <button
+              onClick={handleTamaraOTP}
+              className="w-full bg-[#2c3e50] hover:bg-[#34495e] text-white py-3 rounded-lg font-medium"
+            >
+              Verify & Pay
+            </button>
+          </div>
+        );
+
+      case 'tamara-processing':
+        return (
+          <div className="w-full h-full flex items-center justify-center">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-[#2c3e50] mx-auto mb-4"></div>
+              <p className="text-lg text-black">Processing your Tamara payment...</p>
+            </div>
+          </div>
+        );
+
+      default:
+        return (
+          <div className="max-w-5xl mx-auto px-4 py-6">
+            <h2 className="text-2xl font-medium mb-6 text-black">Select a payment method</h2>
+            
+            {/* Credit/Debit Card Section */}
+            <div className="bg-white border border-gray-200 rounded-lg p-4 mb-4">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="flex gap-4 items-center">
+                  <Image 
+                    src="/Visa_Logo_2014.png" 
+                    alt="Visa" 
+                    width={60}
+                    height={32}
+                    className="h-8 object-contain"
+                  />
+                  <Image 
+                    src="/mastercard-logo.png" 
+                    alt="Mastercard" 
+                    width={50}
+                    height={32}
+                    className="h-8 object-contain"
+                  />
+                  <Image 
+                    src="/Mada_Logo.svg.png" 
+                    alt="Mada" 
+                    width={70}
+                    height={32}
+                    className="h-8 object-contain"
+                  />
+                </div>
+                <h3 className="text-lg font-medium text-black">Credit or Debit Card</h3>
+              </div>
+              
+              <div className="space-y-4 mb-4 text-black">
+                <div>
+                  <label className="block text-sm mb-1">Card number</label>
+                  <input 
+                    type="text" 
+                    className="w-full p-2 border border-gray-300 rounded"
+                    placeholder="1234 5678 9012 3456"
+                  />
+                </div>
+                
+                <div className="flex gap-4">
+                  <div className="flex-1">
+                    <label className="block text-sm mb-1">Expiry date</label>
+                    <input 
+                      type="text" 
+                      className="w-full p-2 border border-gray-300 rounded"
+                      placeholder="MM/YY"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <label className="block text-sm mb-1">CVV</label>
+                    <input 
+                      type="text" 
+                      className="w-full p-2 border border-gray-300 rounded"
+                      placeholder="123"
+                    />
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="block text-sm mb-1">Name on card</label>
+                  <input 
+                    type="text" 
+                    className="w-full p-2 border border-gray-300 rounded"
+                    placeholder="John Doe"
+                  />
+                </div>
+              </div>
+            </div>
+            
+            {/* Buy Now Pay Later Section */}
+            <div 
+              onClick={handleTamaraCheckout}
+              className="bg-white border border-gray-200 rounded-lg p-4 mb-4 cursor-pointer hover:border-[#2c3e50]"
+            >
+              <div className="flex items-center gap-4">
+                <Image 
+                  src="/standalone_installment_4x._CB567992720_.png" 
+                  alt="Tamara" 
+                  width={120}
+                  height={48}
+                  className="h-12 object-contain"
+                />
+                <div>
+                  <h3 className="text-lg font-medium text-black">Buy Now, Pay Later with Tamara</h3>
+                  <p className="text-sm text-gray-600">Split into 4 interest-free payments</p>
+                </div>
+              </div>
+            </div>
+            
+            <button 
+              onClick={handleCardCheckout}
+              className="w-full bg-[#ffd814] hover:bg-[#f7ca00] text-black py-3 rounded-lg font-medium"
+            >
+              Use this payment method
+            </button>
+          </div>
+        );
+    }
+  };
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -256,13 +579,41 @@ export const Browser = ({ isOpen, onClose, onMinimize }: BrowserProps) => {
               </motion.div>
             )}
           </AnimatePresence>
-          <iframe
-            src={currentUrl}
-            className="w-full h-full border-none bg-white"
-            sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
-            referrerPolicy="no-referrer"
-            onLoad={handleIframeLoad}
-          />
+          {isAmazonCheckout ? (
+            <div className="w-full h-full bg-white overflow-y-auto">
+              {/* Top Navigation Bar */}
+              <div className="w-full bg-[#232f3e] px-4 py-2 flex items-center justify-between">
+                <div className="flex items-center">
+                  <Image 
+                    src="/amazon-logo-transparent.png" 
+                    alt="Amazon.sa" 
+                    width={24}
+                    height={24}
+                    className="h-8"
+                    style={{ filter: 'brightness(0) invert(1)' }}
+                  />
+                  <span className="text-white ml-4 text-lg">
+                    {checkoutStep === 'complete' ? 'Order Complete' : 'Secure checkout'} ▼
+                  </span>
+                </div>
+                <div className="flex items-center text-white">
+                  <span className="mr-4">🛒 Cart</span>
+                </div>
+              </div>
+
+              <div className="max-w-5xl mx-auto px-4 py-6 text-black">
+                {renderCheckoutStep()}
+              </div>
+            </div>
+          ) : (
+            <iframe
+              src={currentUrl}
+              className="w-full h-full border-none bg-white"
+              sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+              referrerPolicy="no-referrer"
+              onLoad={handleIframeLoad}
+            />
+          )}
         </div>
       </div>
     </WindowFrame>

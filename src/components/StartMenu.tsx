@@ -1,7 +1,7 @@
 'use client'
 
 import { motion, AnimatePresence } from 'framer-motion'
-import { FaGlobe, FaMusic, FaFileAlt } from 'react-icons/fa'
+import { FaGlobe, FaMusic, FaFileAlt, FaTable } from 'react-icons/fa'
 import { useSystemSounds } from '../hooks/useSystemSounds'
 
 interface AppItem {
@@ -17,6 +17,7 @@ interface StartMenuProps {
   onOpenBrowser: () => void
   onOpenSpotify: () => void
   onOpenNotepad: () => void
+  onOpenExcel: () => void
 }
 
 export const StartMenu = ({ 
@@ -24,7 +25,8 @@ export const StartMenu = ({
   onClose,
   onOpenBrowser,
   onOpenSpotify,
-  onOpenNotepad
+  onOpenNotepad,
+  onOpenExcel
 }: StartMenuProps) => {
   const sounds = useSystemSounds();
   
@@ -46,6 +48,12 @@ export const StartMenu = ({
       icon: <FaFileAlt className="w-6 h-6" />,
       label: 'Notepad',
       onClick: onOpenNotepad
+    },
+    {
+      id: 'excel',
+      icon: <FaTable className="w-6 h-6" />,
+      label: 'Excel',
+      onClick: onOpenExcel
     }
   ]
 
@@ -77,7 +85,6 @@ export const StartMenu = ({
                   className="flex items-center gap-3 p-3 rounded-md hover:bg-white/10
                            transition-colors text-left"
                   onClick={() => handleAppClick(app)}
-                  onHoverStart={() => sounds.playHover()}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
