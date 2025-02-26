@@ -44,6 +44,8 @@ export const FileExplorer = ({ isOpen, onClose }: FileExplorerProps) => {
       icon={<FaFolder className="w-4 h-4" />}
       isOpen={isOpen}
       onClose={onClose}
+      isMaximized={false}
+      isMinimized={false}
     >
       <div className="p-4">
         {SAMPLE_FILES.map((item) => (

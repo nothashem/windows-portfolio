@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useState, useRef, useEffect } from 'react'
 import { FaTimes, FaWindowMaximize, FaWindowRestore, FaMinus } from 'react-icons/fa'
 import { useSystemSounds } from '@/hooks/useSystemSounds'
+import useWindowDimensions from '@/hooks/useWindowDimensions'
 
 interface WindowFrameProps {
   title: string
@@ -21,6 +22,9 @@ interface WindowFrameProps {
   }
   isFullScreen?: boolean
   onMinimize?: () => void
+  onMaximize?: () => void
+  isMaximized: boolean
+  isMinimized: boolean
 }
 
 export const WindowFrame = ({
@@ -32,27 +36,38 @@ export const WindowFrame = ({
   defaultSize = { width: '50%', height: '50%' },
   defaultPosition = { x: 40, y: 40 },
   isFullScreen = false,
-  onMinimize
+  onMinimize,
+  onMaximize,
+  isMaximized,
+  isMinimized
 }: WindowFrameProps) => {
   const [isMounted, setIsMounted] = useState(false)
-  const [isMaximized, setIsMaximized] = useState(false)
-  const [isMinimized, setIsMinimized] = useState(false)
   const [position, setPosition] = useState(defaultPosition)
   const [size, setSize] = useState(defaultSize)
   const [dragStartPosition, setDragStartPosition] = useState({ x: 0, y: 0 })
   const windowRef = useRef<HTMLDivElement>(null)
   const [isDragging, setIsDragging] = useState(false)
   const dragConstraintsRef = useRef<HTMLDivElement>(null)
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions()
 
   const sounds = useSystemSounds()
 
+  // Add this state to fix the error
+  const [localIsMinimized, setLocalIsMinimized] = useState(isMinimized)
+
   useEffect(() => {
     setIsMounted(true)
-  }, [])
+    
+    // Update local state when prop changes
+    setLocalIsMinimized(isMinimized)
+  }, [isMinimized])
 
-  const handleMaximize = () => {
+  const handleMaximizeClick = () => {
     sounds.playMaximize()
-    setIsMaximized(!isMaximized)
+    if (onMaximize) {
+      onMaximize()
+    }
+    
     if (!isMaximized) {
       // Store current position and size before maximizing
       setDragStartPosition(position)
@@ -64,7 +79,7 @@ export const WindowFrame = ({
 
   const handleMinimize = () => {
     sounds.playMinimize()
-    setIsMinimized(true)
+    setLocalIsMinimized(true) // Use local state instead of undefined setIsMinimized
     if (onMinimize) {
       onMinimize()
     }
@@ -80,8 +95,8 @@ export const WindowFrame = ({
     
     const width = windowRef.current.offsetWidth
     const height = windowRef.current.offsetHeight
-    const maxX = window.innerWidth - width
-    const maxY = window.innerHeight - height - 48 // Account for taskbar
+    const maxX = windowWidth - width
+    const maxY = windowHeight - height - 48 // Account for taskbar
 
     return {
       x: Math.min(Math.max(0, x), maxX),
@@ -122,10 +137,10 @@ export const WindowFrame = ({
 
   // Add a useEffect to handle window restoration
   useEffect(() => {
-    if (isOpen && isMinimized) {
-      setIsMinimized(false)
+    if (isOpen && localIsMinimized) {
+      setLocalIsMinimized(false)
     }
-  }, [isOpen, isMinimized])
+  }, [isOpen, localIsMinimized])
 
   if (!isMounted) {
     return null
@@ -151,19 +166,19 @@ export const WindowFrame = ({
               top: isFullScreen || isMaximized ? 0 : position.y,
               zIndex: isDragging ? 100 : 50,
               position: 'fixed',
-              visibility: isMinimized ? 'hidden' : 'visible',
+              visibility: localIsMinimized ? 'hidden' : 'visible',
               display: 'flex',
               touchAction: 'none',
             }}
             initial={{ 
               opacity: 0, 
               scale: 0.95,
-              y: isMinimized ? window.innerHeight : 0 
+              y: localIsMinimized ? windowHeight : 0 
             }}
             animate={{ 
               opacity: 1,
               scale: 1,
-              y: isMinimized ? window.innerHeight : 0,
+              y: localIsMinimized ? windowHeight : 0,
               transition: {
                 duration: 0.15,
                 ease: "easeOut"
@@ -172,7 +187,7 @@ export const WindowFrame = ({
             exit={{ 
               opacity: 0, 
               scale: 0.95,
-              y: window.innerHeight 
+              y: windowHeight 
             }}
             transition={{ 
               duration: 0.15,
@@ -180,14 +195,14 @@ export const WindowFrame = ({
               damping: 20,
               stiffness: 300
             }}
-            drag={!isMaximized && !isFullScreen && !isMinimized}
+            drag={!isMaximized && !isFullScreen && !localIsMinimized}
             dragMomentum={false}
             dragElastic={0}
             dragConstraints={{
               top: 0,
               left: 0,
-              right: window.innerWidth - (windowRef.current?.offsetWidth || 0),
-              bottom: window.innerHeight - (windowRef.current?.offsetHeight || 0) - 48
+              right: windowWidth - (windowRef.current?.offsetWidth || 0),
+              bottom: windowHeight - (windowRef.current?.offsetHeight || 0) - 48
             }}
             onDragStart={handleDragStart}
             onDrag={handleDrag}
@@ -211,7 +226,7 @@ export const WindowFrame = ({
                   <FaMinus className="w-3 h-3" />
                 </button>
                 <button
-                  onClick={handleMaximize}
+                  onClick={handleMaximizeClick}
                   className="p-2 hover:bg-white/10 rounded-md transition-colors"
                   disabled={isFullScreen}
                 >

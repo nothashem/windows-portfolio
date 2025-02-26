@@ -21,6 +21,8 @@ export const Notepad = ({ isOpen, onClose, onMinimize }: NotepadProps) => {
   const [content, setContent] = useState('')
   const [savedNotes, setSavedNotes] = useState<Note[]>([])
   const [currentNoteId, setCurrentNoteId] = useState<string | null>(null)
+  const [isMaximized, setIsMaximized] = useState(false)
+  const [isMinimized, setIsMinimized] = useState(false)
   const sounds = useSystemSounds()
 
   // Initialize notes on first mount
@@ -135,15 +137,29 @@ export const Notepad = ({ isOpen, onClose, onMinimize }: NotepadProps) => {
     return words.slice(0, 3).join(' ') || 'Untitled'
   }
 
+  const handleMinimize = () => {
+    setIsMinimized(true)
+    if (onMinimize) {
+      onMinimize()
+    }
+  }
+
+  const toggleMaximize = () => {
+    setIsMaximized(!isMaximized)
+  }
+
   return (
     <WindowFrame
       title="Notepad"
       icon={<FaFileAlt className="w-4 h-4 text-yellow-400" />}
       isOpen={isOpen}
       onClose={onClose}
-      onMinimize={onMinimize}
+      onMinimize={handleMinimize}
+      onMaximize={toggleMaximize}
       defaultSize={{ width: '600px', height: '400px' }}
-      defaultPosition={{ x: 140, y: 80 }}
+      defaultPosition={{ x: 100, y: 100 }}
+      isMaximized={isMaximized}
+      isMinimized={isMinimized}
     >
       <div className="flex h-full bg-[#1e1e1e] text-white">
         {/* Sidebar with saved notes */}
