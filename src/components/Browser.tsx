@@ -367,7 +367,7 @@ export const Browser = ({ isOpen, onClose, onMinimize }: BrowserProps) => {
                     type="tel" 
                     className="flex-1 py-2 px-3 outline-none text-black"
                     placeholder="5xx xxx xxxx"
-                    defaultValue="537577553"
+                    defaultValue="535567553"
                   />
                 </div>
               </div>
@@ -419,7 +419,7 @@ export const Browser = ({ isOpen, onClose, onMinimize }: BrowserProps) => {
                     type="tel" 
                     className="flex-1 py-2 px-3 outline-none text-black"
                     placeholder="5xx xxx xxxx"
-                    defaultValue="537577553"
+                    defaultValue="53757573"
                   />
                 </div>
               </div>
