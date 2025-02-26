@@ -2,7 +2,7 @@
 
 A web-based operating system experience built with Next.js, React, and TypeScript. This project simulates a Windows-like desktop environment in the browser, complete with functional applications, window management, and system sounds.
 
-![Hashim OS](path/to/screenshot.png)
+Hashim OS
 
 ## Features
 
