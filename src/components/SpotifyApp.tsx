@@ -55,6 +55,8 @@ export const SpotifyApp = ({ isOpen, onClose, onMinimize }: SpotifyAppProps) => 
     duration: 0,
     songId: SAMPLE_SONGS[0].id
   })
+  const [isMaximized, setIsMaximized] = useState(false)
+  const [isMinimized, setIsMinimized] = useState(false)
   const audioRef = useRef<HTMLAudioElement>(null)
   const sounds = useSystemSounds()
   const { globalVolume, isMuted, setGlobalVolume, setIsMuted } = useVolume()
@@ -228,15 +230,29 @@ export const SpotifyApp = ({ isOpen, onClose, onMinimize }: SpotifyAppProps) => 
     }, 100)
   }
 
+  const handleMinimize = () => {
+    setIsMinimized(true)
+    if (onMinimize) {
+      onMinimize()
+    }
+  }
+
+  const toggleMaximize = () => {
+    setIsMaximized(!isMaximized)
+  }
+
   return (
     <WindowFrame
       title="Music Player"
       icon={<FaPlay className="w-4 h-4 text-green-400" />}
       isOpen={isOpen}
       onClose={onClose}
-      onMinimize={onMinimize}
+      onMinimize={handleMinimize}
+      onMaximize={toggleMaximize}
       defaultSize={{ width: '800px', height: '600px' }}
       defaultPosition={{ x: 100, y: 60 }}
+      isMaximized={isMaximized}
+      isMinimized={isMinimized}
     >
       <div className="flex h-full bg-[#121212] text-white">
         {/* Left Sidebar */}
@@ -317,19 +333,19 @@ export const SpotifyApp = ({ isOpen, onClose, onMinimize }: SpotifyAppProps) => 
 
           {/* Playback Controls */}
           <div className="flex items-center gap-6">
-  <FaStepBackward className="w-4 h-4 text-white/70 hover:text-white cursor-pointer" />
-  <button
-    onClick={handlePlayPause}
-    className="w-8 h-8 rounded-full bg-white flex items-center justify-center hover:scale-105 transition-transform"
-  >
-    {isPlaying ? (
-      <FaPause className="w-4 h-4 text-black" />
-    ) : (
-      <FaPlay className="w-4 h-4 text-black ml-1" />
-    )}
-  </button>
-  <FaStepForward className="w-4 h-4 text-white/70 hover:text-white cursor-pointer" />
-</div>
+            <FaStepBackward className="w-4 h-4 text-white/70 hover:text-white cursor-pointer" />
+            <button
+              onClick={handlePlayPause}
+              className="w-8 h-8 rounded-full bg-white flex items-center justify-center hover:scale-105 transition-transform"
+            >
+              {isPlaying ? (
+                <FaPause className="w-4 h-4 text-black" />
+              ) : (
+                <FaPlay className="w-4 h-4 text-black ml-1" />
+              )}
+            </button>
+            <FaStepForward className="w-4 h-4 text-white/70 hover:text-white cursor-pointer" />
+          </div>
 
           {/* Volume Control */}
           <div className="flex items-center gap-2">

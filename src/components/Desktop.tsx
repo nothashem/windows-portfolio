@@ -1,15 +1,18 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import Taskbar from './Taskbar'
+import React, { useState, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { FaFileAlt, FaTable } from 'react-icons/fa'
+import { useSystemSounds } from '@/hooks/useSystemSounds'
+
 import DesktopIcon from './DesktopIcon'
+import { Taskbar } from './Taskbar'
 import { SpotifyApp } from './SpotifyApp'
 import { Browser } from './Browser'
-import { useSystemSounds } from '@/hooks/useSystemSounds'
 import { Notepad } from './Notepad'
-import { FaFileAlt, FaTable } from 'react-icons/fa'
-import { StartMenu } from './StartMenu'
 import { Excel } from './Excel'
+import { BootupScreen } from './BootupScreen'
+import { StartMenu } from './StartMenu'
 
 interface DesktopProps {
   wallpaper: string
@@ -22,13 +25,28 @@ export const Desktop = ({ wallpaper }: DesktopProps) => {
   const [isBrowserOpen, setIsBrowserOpen] = useState(false)
   const [isNotepadOpen, setIsNotepadOpen] = useState(false)
   const [isExcelOpen, setIsExcelOpen] = useState(false)
+  const [isBootupOpen, setIsBootupOpen] = useState(true)
   const [activeWindow, setActiveWindow] = useState<string | null>(null)
 
   const sounds = useSystemSounds()
 
   useEffect(() => {
     setMounted(true)
-    sounds.playStartup()
+    
+    // Play startup sound after a slight delay
+    const soundTimer = setTimeout(() => {
+      sounds.playStartup()
+    }, 1000)
+
+    // Close the bootup screen with a fade effect
+    const bootTimer = setTimeout(() => {
+      setIsBootupOpen(false)
+    }, 3000)
+
+    return () => {
+      clearTimeout(soundTimer)
+      clearTimeout(bootTimer)
+    }
   }, [sounds])
 
   const handleWindowOpen = (opener: () => void) => {
@@ -59,7 +77,7 @@ export const Desktop = ({ wallpaper }: DesktopProps) => {
       >
         {/* Background and Icons Layer */}
         <div className="absolute inset-0">
-          <div className="p-2 grid grid-cols-6 gap-4 content-start">
+          <div className="p-2 flex flex-col gap-1 w-fit">
             <DesktopIcon
               icon="🎵"
               label="Music"
@@ -70,7 +88,7 @@ export const Desktop = ({ wallpaper }: DesktopProps) => {
             <DesktopIcon
               icon="🌐"
               label="Browser"
-              onClick={() => setIsBrowserOpen(true)}
+              onClick={() => handleWindowOpen(() => setIsBrowserOpen(true))}
               selected={false}
               inSelectionBox={false}
             />
@@ -128,20 +146,38 @@ export const Desktop = ({ wallpaper }: DesktopProps) => {
             onSpotifyToggle={() => handleWindowToggle(isSpotifyOpen, setIsSpotifyOpen, 'spotify')}
             isNotepadOpen={isNotepadOpen}
             onNotepadToggle={() => handleWindowToggle(isNotepadOpen, setIsNotepadOpen, 'notepad')}
-            isExcelOpen={isExcelOpen}
-            onExcelToggle={() => handleWindowToggle(isExcelOpen, setIsExcelOpen, 'excel')}
             activeWindow={activeWindow}
             setActiveWindow={setActiveWindow}
+            isExcelOpen={isExcelOpen}
+            onExcelToggle={() => handleWindowToggle(isExcelOpen, setIsExcelOpen, 'excel')}
           />
         </div>
 
+        {/* Bootup Screen - as an overlay */}
+        <AnimatePresence>
+          {isBootupOpen && (
+            <motion.div 
+              className="absolute inset-0 bg-black z-50"
+              initial={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.8 }}
+            >
+              <BootupScreen
+                isOpen={isBootupOpen}
+                onClose={() => setIsBootupOpen(false)}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* StartMenu - rendered directly like in the original */}
         <StartMenu 
           isOpen={isStartMenuOpen}
           onClose={() => setIsStartMenuOpen(false)}
-          onOpenBrowser={() => setIsBrowserOpen(true)}
-          onOpenSpotify={() => setIsSpotifyOpen(true)}
-          onOpenNotepad={() => setIsNotepadOpen(true)}
-          onOpenExcel={() => setIsExcelOpen(true)}
+          onOpenBrowser={() => handleWindowOpen(() => setIsBrowserOpen(true))}
+          onOpenSpotify={() => handleWindowOpen(() => setIsSpotifyOpen(true))}
+          onOpenNotepad={() => handleWindowOpen(() => setIsNotepadOpen(true))}
+          onOpenExcel={() => handleWindowOpen(() => setIsExcelOpen(true))}
         />
       </main>
     </div>

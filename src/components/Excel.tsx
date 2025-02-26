@@ -243,6 +243,9 @@ export const Excel = ({ isOpen, onClose, onMinimize }: ExcelProps) => {
   // Add this state to track if formulas have been initialized
   const [formulasInitialized, setFormulasInitialized] = useState(false);
 
+  const [isMaximized, setIsMaximized] = useState(false)
+  const [isMinimized, setIsMinimized] = useState(false)
+
   const getCellId = (row: number, col: number) => `${String.fromCharCode(65 + col)}${row + 1}`
   const getColHeader = (col: number) => String.fromCharCode(65 + col)
 
@@ -864,6 +867,13 @@ export const Excel = ({ isOpen, onClose, onMinimize }: ExcelProps) => {
     }))
   }, []);
 
+  const handleMinimize = () => {
+    setIsMinimized(true)
+    if (onMinimize) {
+      onMinimize()
+    }
+  }
+
   return (
     <ExcelErrorBoundary>
       <WindowFrame
@@ -871,9 +881,11 @@ export const Excel = ({ isOpen, onClose, onMinimize }: ExcelProps) => {
         icon={<FaTable />}
         isOpen={isOpen}
         onClose={onClose}
-        onMinimize={onMinimize}
-        defaultSize={{ width: '900px', height: '600px' }}
-        defaultPosition={{ x: 40, y: 40 }}
+        onMinimize={handleMinimize}
+        defaultSize={{ width: '800px', height: '600px' }}
+        defaultPosition={{ x: 80, y: 80 }}
+        isMaximized={isMaximized}
+        isMinimized={isMinimized}
       >
         <div className="flex flex-col h-full bg-white">
           <FormulaBar />

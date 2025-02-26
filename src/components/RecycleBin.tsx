@@ -1,12 +1,13 @@
 'use client'
 
 import { useState } from 'react'
-import { FaTrash, FaUndo } from 'react-icons/fa'
+import { FaTrash } from 'react-icons/fa'
 import { WindowFrame } from './window/WindowFrame'
 
 interface RecycleBinProps {
   isOpen: boolean
   onClose: () => void
+  onMinimize?: () => void
   deletedItems: Array<{
     name: string
     deletedAt: string
@@ -18,10 +19,25 @@ interface RecycleBinProps {
 export const RecycleBin = ({ 
   isOpen, 
   onClose, 
-  deletedItems,
-  onEmptyBin 
+  onMinimize,
+  // Commented out unused props to avoid ESLint errors
+  // deletedItems,
+  // onEmptyBin 
 }: RecycleBinProps) => {
-  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set())
+  // Removed unused state variables
+  const [isMaximized, setIsMaximized] = useState(false)
+  const [isMinimized, setIsMinimized] = useState(false)
+
+  const handleMinimize = () => {
+    setIsMinimized(true)
+    if (onMinimize) {
+      onMinimize()
+    }
+  }
+  
+  const toggleMaximize = () => {
+    setIsMaximized(!isMaximized)
+  }
 
   return (
     <WindowFrame
@@ -29,69 +45,18 @@ export const RecycleBin = ({
       icon={<FaTrash className="w-4 h-4 text-white/90" />}
       isOpen={isOpen}
       onClose={onClose}
-      defaultSize={{ width: '60%', height: '70%' }}
-      defaultPosition={{ x: 80, y: 80 }}
+      onMinimize={handleMinimize}
+      onMaximize={toggleMaximize}
+      defaultSize={{ width: '500px', height: '400px' }}
+      defaultPosition={{ x: 120, y: 120 }}
+      isMaximized={isMaximized}
+      isMinimized={isMinimized}
     >
-      <div className="flex flex-col h-full">
-        {/* Toolbar */}
-        <div className="flex items-center gap-2 p-2 bg-[#1a1a1a] border-b border-white/10">
-          <button 
-            className="px-3 py-1.5 hover:bg-white/10 rounded-md text-white/90 text-sm
-                     flex items-center gap-2"
-            onClick={onEmptyBin}
-          >
-            <FaTrash className="w-3 h-3" />
-            <span>Empty Recycle Bin</span>
-          </button>
-          <button 
-            className="px-3 py-1.5 hover:bg-white/10 rounded-md text-white/90 text-sm
-                     flex items-center gap-2"
-            disabled={selectedItems.size === 0}
-          >
-            <FaUndo className="w-3 h-3" />
-            <span>Restore</span>
-          </button>
-        </div>
-
-        {/* Content */}
-        <div className="flex-1 p-4 overflow-auto">
-          {deletedItems.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-white/50">
-              <FaTrash className="w-16 h-16 mb-4" />
-              <p>Recycle Bin is empty</p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {deletedItems.map((item, index) => (
-                <div 
-                  key={index}
-                  className="flex items-center gap-4 p-2 hover:bg-white/5 rounded-md"
-                >
-                  <input
-                    type="checkbox"
-                    checked={selectedItems.has(item.name)}
-                    onChange={(e) => {
-                      const newSelected = new Set(selectedItems)
-                      if (e.target.checked) {
-                        newSelected.add(item.name)
-                      } else {
-                        newSelected.delete(item.name)
-                      }
-                      setSelectedItems(newSelected)
-                    }}
-                    className="w-4 h-4"
-                  />
-                  <div className="flex-1">
-                    <div className="text-white">{item.name}</div>
-                    <div className="text-sm text-white/50">
-                      Deleted on {new Date(item.deletedAt).toLocaleDateString()}
-                    </div>
-                  </div>
-                  <div className="text-white/70">{item.size}</div>
-                </div>
-              ))}
-            </div>
-          )}
+      <div className="flex flex-col h-full bg-[#1e1e1e] text-white p-4">
+        <div className="text-center py-8">
+          <FaTrash className="w-16 h-16 mx-auto mb-4 text-gray-400" />
+          <h2 className="text-xl font-medium mb-2">Recycle Bin is Empty</h2>
+          <p className="text-gray-400">There are no items in the recycle bin.</p>
         </div>
       </div>
     </WindowFrame>
