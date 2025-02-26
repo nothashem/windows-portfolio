@@ -97,7 +97,7 @@ export const BootupScreen = ({ isOpen, onClose }: BootupScreenProps) => {
 
             {/* Copyright Text */}
             <div className="absolute bottom-8 left-0 right-0 text-center">
-              <p className="text-xs text-white/60">Copyright © 2024 Hashim Corporation</p>
+              <p className="text-xs text-white/60">Copyright © 2025 Hashim Corporation</p>
             </div>
           </div>
         </motion.div>
