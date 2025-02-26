@@ -80,18 +80,6 @@ Hashim OS
 
 4. Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-## Project Structure
-
-.
-├── public/            # Static assets
-├── src/
-│   ├── app/           # Next.js App Router
-│   ├── components/    # React components
-│   ├── hooks/         # Custom React hooks
-│   ├── styles/        # Global styles
-│   └── utils/         # Utility functions
-└── ...
-
 ## Customization
 
 ### Changing the Wallpaper
