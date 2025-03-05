@@ -450,27 +450,39 @@ export const Excel = ({ isOpen, onClose, onMinimize }: ExcelProps) => {
   }, [excelState.activeSheetId]);
 
   const handleCellClick = (cellId: string) => {
-    setSelectedCell({sheetId: excelState.activeSheetId, cellId})
-    setExcelState(prev => ({
-      ...prev,
-      sheets: {
-        ...prev.sheets,
-        [excelState.activeSheetId]: {
-          ...prev.sheets[excelState.activeSheetId],
-          cells: {
-            ...prev.sheets[excelState.activeSheetId].cells,
-            [cellId]: {
-              ...prev.sheets[excelState.activeSheetId].cells[cellId],
-              value: prev.sheets[excelState.activeSheetId].cells[cellId]?.formula || prev.sheets[excelState.activeSheetId].cells[cellId]?.value || '',
-              isEditing: true,
-              formula: prev.sheets[excelState.activeSheetId].cells[cellId]?.formula,
-              computedValue: prev.sheets[excelState.activeSheetId].cells[cellId]?.computedValue
+    const currentSheet = getCurrentSheet();
+    const currentCell = currentSheet.cells[cellId];
+    const isAlreadySelected = selectedCell?.cellId === cellId;
+
+    // If cell is already selected and clicked again, start editing
+    if (isAlreadySelected) {
+      setExcelState(prev => ({
+        ...prev,
+        sheets: {
+          ...prev.sheets,
+          [prev.activeSheetId]: {
+            ...prev.sheets[prev.activeSheetId],
+            cells: {
+              ...prev.sheets[prev.activeSheetId].cells,
+              [cellId]: {
+                ...currentCell,
+                isEditing: true,
+                value: currentCell?.formula || currentCell?.value || ''
+              }
             }
           }
         }
+      }));
+    } else {
+      // Just select the cell on first click
+      setSelectedCell({ sheetId: excelState.activeSheetId, cellId });
+      
+      // If any other cell is being edited, finish its editing
+      if (selectedCell) {
+        finishEditing(selectedCell.cellId);
       }
-    }))
-  }
+    }
+  };
 
   const handleCellBlur = (cellId: string) => {
     setTimeout(() => {
@@ -517,6 +529,38 @@ export const Excel = ({ isOpen, onClose, onMinimize }: ExcelProps) => {
       };
     });
   };
+
+  // Move finishEditing up and memoize it
+  const finishEditing = useCallback((cellId: string) => {
+    const currentSheet = getCurrentSheet()
+    const cell = currentSheet.cells[cellId];
+    if (!cell) return;
+
+    const isFormula = cell.value?.startsWith('=');
+    const updates: Record<string, Partial<CellData>> = {};
+
+    // Clear cache for new calculations
+    formulaCache.current = {};
+
+    // Update the current cell
+    updates[cellId] = {
+      isEditing: false,
+      formula: isFormula ? cell.value : undefined,
+      computedValue: isFormula ? evaluateFormula(cell.value, cellId) : cell.value
+    };
+
+    // Batch update dependent cells
+    Object.entries(currentSheet.cells).forEach(([id, otherCell]) => {
+      if (otherCell.formula?.includes(cellId)) {
+        updates[id] = {
+          computedValue: evaluateFormula(otherCell.formula, id)
+        };
+      }
+    });
+
+    // Perform batch update
+    batchUpdateCells(updates);
+  }, [getCurrentSheet, evaluateFormula]);
 
   // Update the handleCellChange function to use the new batchUpdateCells
   const handleCellChange = (cellId: string, value: string) => {
@@ -579,7 +623,13 @@ export const Excel = ({ isOpen, onClose, onMinimize }: ExcelProps) => {
   }
 
   // Update the MemoizedCellContent component with better padding
-  const MemoizedCellContent = React.memo(function MemoizedCellContent({ cellId, cell }: { cellId: string, cell: CellData | undefined }) {
+  const MemoizedCellContent = React.memo(function MemoizedCellContent({ 
+    cellId, 
+    cell 
+  }: { 
+    cellId: string, 
+    cell: CellData | undefined 
+  }) {
     const highlightClass = getCellHighlight(cellId);
     
     if (cell?.isEditing) {
@@ -590,7 +640,31 @@ export const Excel = ({ isOpen, onClose, onMinimize }: ExcelProps) => {
           value={cell.formula || cell.value}
           onChange={(e) => handleCellChange(cellId, e.target.value)}
           onBlur={() => handleCellBlur(cellId)}
-          onKeyDown={(e) => handleKeyDown(e, cellId)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              finishEditing(cellId);
+            } else if (e.key === 'Escape') {
+              e.preventDefault();
+              // Revert changes and exit editing mode
+              setExcelState(prev => ({
+                ...prev,
+                sheets: {
+                  ...prev.sheets,
+                  [prev.activeSheetId]: {
+                    ...prev.sheets[prev.activeSheetId],
+                    cells: {
+                      ...prev.sheets[prev.activeSheetId].cells,
+                      [cellId]: {
+                        ...prev.sheets[prev.activeSheetId].cells[cellId],
+                        isEditing: false
+                      }
+                    }
+                  }
+                }
+              }));
+            }
+          }}
           className={`absolute inset-0 w-full h-full px-2 outline-none bg-white text-black ${highlightClass}`}
           style={{
             padding: `${CELL_DIMENSIONS.padding.y}px ${CELL_DIMENSIONS.padding.x}px`
@@ -617,7 +691,31 @@ export const Excel = ({ isOpen, onClose, onMinimize }: ExcelProps) => {
 
   // Update cell rendering to use memoized component
   const renderCellContent = (cellId: string, cell: CellData | undefined) => {
-    return <MemoizedCellContent cellId={cellId} cell={cell} />;
+    return (
+      <div
+        onDoubleClick={() => {
+          setExcelState(prev => ({
+            ...prev,
+            sheets: {
+              ...prev.sheets,
+              [prev.activeSheetId]: {
+                ...prev.sheets[prev.activeSheetId],
+                cells: {
+                  ...prev.sheets[prev.activeSheetId].cells,
+                  [cellId]: {
+                    ...cell,
+                    isEditing: true,
+                    value: cell?.formula || cell?.value || ''
+                  }
+                }
+              }
+            }
+          }));
+        }}
+      >
+        <MemoizedCellContent cellId={cellId} cell={cell} />
+      </div>
+    );
   };
 
   // Update the FormulaBar component with consistent padding
@@ -651,105 +749,135 @@ export const Excel = ({ isOpen, onClose, onMinimize }: ExcelProps) => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
       if (!selectedCell) return;
       
-      const [col, row] = [selectedCell.cellId.charCodeAt(0) - 65, parseInt(selectedCell.cellId.slice(1)) - 1]
+      const [col, row] = [selectedCell.cellId.charCodeAt(0) - 65, parseInt(selectedCell.cellId.slice(1)) - 1];
+      const currentSheet = getCurrentSheet();
+      const isEditing = currentSheet.cells[selectedCell.cellId]?.isEditing;
+      
+      // Don't handle navigation keys if we're editing (except Enter and Tab)
+      if (isEditing && !['Enter', 'Tab', 'Escape'].includes(e.key)) {
+        return;
+      }
+
       let nextCell = null;
+      let shouldStartEditing = false;
 
       switch (e.key) {
-        case 'ArrowUp':
-          if (row > 0) {
-            e.preventDefault();
-            nextCell = getCellId(row - 1, col);
+        case 'Enter':
+          e.preventDefault();
+          if (isEditing) {
+            // Finish editing and move down
+            finishEditing(selectedCell.cellId);
+            if (row < ROWS - 1) {
+              nextCell = getCellId(row + 1, col);
+            }
+          } else {
+            // Start editing current cell
+            shouldStartEditing = true;
+            nextCell = selectedCell.cellId;
           }
           break;
-        case 'ArrowDown':
-          if (row < ROWS - 1) {
-            e.preventDefault();
-            nextCell = getCellId(row + 1, col);
-          }
-          break;
-        case 'ArrowLeft':
-          if (col > 0) {
-            e.preventDefault();
-            nextCell = getCellId(row, col - 1);
-          }
-          break;
-        case 'ArrowRight':
-          if (col < COLS - 1) {
-            e.preventDefault();
-            nextCell = getCellId(row, col + 1);
-          }
-          break;
+
         case 'Tab':
           e.preventDefault();
+          if (isEditing) {
+            finishEditing(selectedCell.cellId);
+          }
+          // Move left/right based on shift key
           if (e.shiftKey && col > 0) {
             nextCell = getCellId(row, col - 1);
           } else if (!e.shiftKey && col < COLS - 1) {
             nextCell = getCellId(row, col + 1);
           }
+          shouldStartEditing = true;
+          break;
+
+        case 'Escape':
+          if (isEditing) {
+            e.preventDefault();
+            // Revert changes and exit editing mode
+            setExcelState(prev => ({
+              ...prev,
+              sheets: {
+                ...prev.sheets,
+                [prev.activeSheetId]: {
+                  ...prev.sheets[prev.activeSheetId],
+                  cells: {
+                    ...prev.sheets[prev.activeSheetId].cells,
+                    [selectedCell.cellId]: {
+                      ...prev.sheets[prev.activeSheetId].cells[selectedCell.cellId],
+                      isEditing: false,
+                      value: prev.sheets[prev.activeSheetId].cells[selectedCell.cellId]?.formula || 
+                            prev.sheets[prev.activeSheetId].cells[selectedCell.cellId]?.value || ''
+                    }
+                  }
+                }
+              }
+            }));
+          }
+          break;
+
+        case 'ArrowUp':
+          e.preventDefault();
+          if (row > 0) {
+            nextCell = getCellId(row - 1, col);
+          }
+          break;
+
+        case 'ArrowDown':
+          e.preventDefault();
+          if (row < ROWS - 1) {
+            nextCell = getCellId(row + 1, col);
+          }
+          break;
+
+        case 'ArrowLeft':
+          e.preventDefault();
+          if (col > 0) {
+            nextCell = getCellId(row, col - 1);
+          }
+          break;
+
+        case 'ArrowRight':
+          e.preventDefault();
+          if (col < COLS - 1) {
+            nextCell = getCellId(row, col + 1);
+          }
+          break;
+
+        case 'F2':
+          e.preventDefault();
+          shouldStartEditing = true;
+          nextCell = selectedCell.cellId;
+          break;
+
+        default:
+          // If it's a printable character and we're not editing, start editing with that character
+          if (!isEditing && e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+            e.preventDefault();
+            shouldStartEditing = true;
+            nextCell = selectedCell.cellId;
+            // We'll handle the character input in a separate effect
+            setTimeout(() => {
+              handleCellChange(selectedCell.cellId, e.key);
+            }, 0);
+          }
           break;
       }
 
       if (nextCell) {
-        const shouldStartEditing = ['Tab'].includes(e.key);
         handleCellSelect(nextCell, shouldStartEditing);
       }
     };
 
     window.addEventListener('keydown', handleGlobalKeyDown);
     return () => window.removeEventListener('keydown', handleGlobalKeyDown);
-  }, [selectedCell, handleCellSelect]);
+  }, [selectedCell, handleCellSelect, getCurrentSheet, finishEditing]);
 
-  // Simplify the cell-level keyboard handler to only handle Enter
-  const handleKeyDown = (e: React.KeyboardEvent, cellId: string) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      e.stopPropagation(); // Prevent the event from bubbling
-      
-      finishEditing(cellId);
-      
-      const currentRow = parseInt(cellId.slice(1)) - 1;
-      const currentCol = cellId.charCodeAt(0) - 65;
-      
-      if (currentRow < ROWS - 1) {
-        const nextCellId = getCellId(currentRow + 1, currentCol);
-        setTimeout(() => {
-          handleCellSelect(nextCellId, false);
-        }, 0);
-      }
-    }
-  }
-
-  // Optimized finish editing
-  const finishEditing = (cellId: string) => {
-    const currentSheet = getCurrentSheet()
-    const cell = currentSheet.cells[cellId];
-    if (!cell) return;
-
-    const isFormula = cell.value?.startsWith('=');
-    const updates: Record<string, Partial<CellData>> = {};
-
-    // Clear cache for new calculations
-    formulaCache.current = {};
-
-    // Update the current cell
-    updates[cellId] = {
-      isEditing: false,
-      formula: isFormula ? cell.value : undefined,
-      computedValue: isFormula ? evaluateFormula(cell.value, cellId) : cell.value
-    };
-
-    // Batch update dependent cells
-    Object.entries(currentSheet.cells).forEach(([id, otherCell]) => {
-      if (otherCell.formula?.includes(cellId)) {
-        updates[id] = {
-          computedValue: evaluateFormula(otherCell.formula, id)
-        };
-      }
-    });
-
-    // Perform batch update
-    batchUpdateCells(updates);
-  }
+  // Remove the cell-level handleKeyDown as it's now handled by the global handler
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    // Prevent event propagation to avoid double-handling
+    e.stopPropagation();
+  };
 
   // Update cell focus useEffect
   useEffect(() => {

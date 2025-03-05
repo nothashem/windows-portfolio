@@ -6,6 +6,7 @@ import { WindowFrame } from './window/WindowFrame'
 import { useSystemSounds } from '@/hooks/useSystemSounds'
 import Image from 'next/image'
 import { useVolume } from '@/contexts/VolumeContext'
+import { useHotkeys } from 'react-hotkeys-hook'
 
 interface SongProgress {
   currentTime: number
@@ -161,6 +162,26 @@ export const SpotifyApp = ({ isOpen, onClose, onMinimize }: SpotifyAppProps) => 
     }
   }, [currentSong.audioSrc])
 
+  // Add keyboard shortcuts
+  useHotkeys('space', (e) => {
+    e.preventDefault()
+    handlePlayPause()
+  })
+
+  useHotkeys('right', () => {
+    const currentIndex = SAMPLE_SONGS.findIndex(song => song.id === currentSong.id)
+    if (currentIndex < SAMPLE_SONGS.length - 1) {
+      handleSongSelect(SAMPLE_SONGS[currentIndex + 1])
+    }
+  })
+
+  useHotkeys('left', () => {
+    const currentIndex = SAMPLE_SONGS.findIndex(song => song.id === currentSong.id)
+    if (currentIndex > 0) {
+      handleSongSelect(SAMPLE_SONGS[currentIndex - 1])
+    }
+  })
+
   const formatTime = (time: number) => {
     const minutes = Math.floor(time / 60)
     const seconds = Math.floor(time % 60)
@@ -272,7 +293,8 @@ export const SpotifyApp = ({ isOpen, onClose, onMinimize }: SpotifyAppProps) => 
               <div
                 key={song.id}
                 onClick={() => handleSongSelect(song)}
-                className="flex items-center gap-4 group cursor-pointer hover:bg-white/10 p-3 rounded-md transition-colors"
+                className={`flex items-center gap-4 group cursor-pointer hover:bg-white/10 p-3 rounded-md transition-colors
+                  ${currentSong.id === song.id ? 'bg-white/5' : ''}`}
               >
                 <div className="relative w-12 h-12 flex-shrink-0">
                   <Image
@@ -282,6 +304,11 @@ export const SpotifyApp = ({ isOpen, onClose, onMinimize }: SpotifyAppProps) => 
                     className="object-cover rounded"
                     priority
                   />
+                  {currentSong.id === song.id && isPlaying && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded">
+                      <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                    </div>
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="font-medium truncate">{song.title}</div>
