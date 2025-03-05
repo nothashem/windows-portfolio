@@ -492,8 +492,8 @@ export const Excel = ({ isOpen, onClose, onMinimize }: ExcelProps) => {
     }, 0);
   }
 
-  // First, update the batchUpdateCells function to ensure complete CellData objects
-  const batchUpdateCells = (updates: Record<string, Partial<CellData>>) => {
+  // Update batchUpdateCells to use useCallback
+  const batchUpdateCells = useCallback((updates: Record<string, Partial<CellData>>) => {
     setExcelState(prev => {
       const currentSheet = prev.sheets[prev.activeSheetId];
       const updatedCells: Record<string, CellData> = {};
@@ -528,7 +528,7 @@ export const Excel = ({ isOpen, onClose, onMinimize }: ExcelProps) => {
         }
       };
     });
-  };
+  }, []);
 
   // Move finishEditing up and memoize it
   const finishEditing = useCallback((cellId: string) => {
@@ -562,8 +562,8 @@ export const Excel = ({ isOpen, onClose, onMinimize }: ExcelProps) => {
     batchUpdateCells(updates);
   }, [getCurrentSheet, evaluateFormula]);
 
-  // Update the handleCellChange function to use the new batchUpdateCells
-  const handleCellChange = (cellId: string, value: string) => {
+  // Update handleCellChange to use useCallback
+  const handleCellChange = useCallback((cellId: string, value: string) => {
     const isFormula = value.startsWith('=');
     const updates: Record<string, Partial<CellData>> = {};
     
@@ -590,7 +590,7 @@ export const Excel = ({ isOpen, onClose, onMinimize }: ExcelProps) => {
 
     // Batch update all affected cells
     batchUpdateCells(updates);
-  };
+  }, [getCurrentSheet, evaluateFormula, batchUpdateCells]);
 
   // Improved function to get referenced cells
   const getReferencedCells = (formula: string): string[] => {
@@ -753,46 +753,28 @@ export const Excel = ({ isOpen, onClose, onMinimize }: ExcelProps) => {
       const currentSheet = getCurrentSheet();
       const isEditing = currentSheet.cells[selectedCell.cellId]?.isEditing;
       
-      // Don't handle navigation keys if we're editing (except Enter and Tab)
-      if (isEditing && !['Enter', 'Tab', 'Escape'].includes(e.key)) {
-        return;
-      }
-
-      let nextCell = null;
-      let shouldStartEditing = false;
-
-      switch (e.key) {
-        case 'Enter':
-          e.preventDefault();
-          if (isEditing) {
-            // Finish editing and move down
+      // Handle special keys when editing
+      if (isEditing) {
+        switch (e.key) {
+          case 'Enter':
+            e.preventDefault();
             finishEditing(selectedCell.cellId);
             if (row < ROWS - 1) {
-              nextCell = getCellId(row + 1, col);
+              handleCellSelect(getCellId(row + 1, col), false);
             }
-          } else {
-            // Start editing current cell
-            shouldStartEditing = true;
-            nextCell = selectedCell.cellId;
-          }
-          break;
-
-        case 'Tab':
-          e.preventDefault();
-          if (isEditing) {
+            return;
+            
+          case 'Tab':
+            e.preventDefault();
             finishEditing(selectedCell.cellId);
-          }
-          // Move left/right based on shift key
-          if (e.shiftKey && col > 0) {
-            nextCell = getCellId(row, col - 1);
-          } else if (!e.shiftKey && col < COLS - 1) {
-            nextCell = getCellId(row, col + 1);
-          }
-          shouldStartEditing = true;
-          break;
-
-        case 'Escape':
-          if (isEditing) {
+            if (e.shiftKey && col > 0) {
+              handleCellSelect(getCellId(row, col - 1), true);
+            } else if (!e.shiftKey && col < COLS - 1) {
+              handleCellSelect(getCellId(row, col + 1), true);
+            }
+            return;
+            
+          case 'Escape':
             e.preventDefault();
             // Revert changes and exit editing mode
             setExcelState(prev => ({
@@ -805,73 +787,74 @@ export const Excel = ({ isOpen, onClose, onMinimize }: ExcelProps) => {
                     ...prev.sheets[prev.activeSheetId].cells,
                     [selectedCell.cellId]: {
                       ...prev.sheets[prev.activeSheetId].cells[selectedCell.cellId],
-                      isEditing: false,
-                      value: prev.sheets[prev.activeSheetId].cells[selectedCell.cellId]?.formula || 
-                            prev.sheets[prev.activeSheetId].cells[selectedCell.cellId]?.value || ''
+                      isEditing: false
                     }
                   }
                 }
               }
             }));
-          }
+            return;
+
+          // Let other keys pass through when editing
+          default:
+            return;
+        }
+      }
+
+      // Handle navigation and special keys when not editing
+      switch (e.key) {
+        case 'Enter':
+          e.preventDefault();
+          handleCellSelect(selectedCell.cellId, true);
           break;
 
         case 'ArrowUp':
           e.preventDefault();
           if (row > 0) {
-            nextCell = getCellId(row - 1, col);
+            handleCellSelect(getCellId(row - 1, col), false);
           }
           break;
 
         case 'ArrowDown':
           e.preventDefault();
           if (row < ROWS - 1) {
-            nextCell = getCellId(row + 1, col);
+            handleCellSelect(getCellId(row + 1, col), false);
           }
           break;
 
         case 'ArrowLeft':
           e.preventDefault();
           if (col > 0) {
-            nextCell = getCellId(row, col - 1);
+            handleCellSelect(getCellId(row, col - 1), false);
           }
           break;
 
         case 'ArrowRight':
           e.preventDefault();
           if (col < COLS - 1) {
-            nextCell = getCellId(row, col + 1);
+            handleCellSelect(getCellId(row, col + 1), false);
           }
           break;
 
         case 'F2':
           e.preventDefault();
-          shouldStartEditing = true;
-          nextCell = selectedCell.cellId;
+          handleCellSelect(selectedCell.cellId, true);
           break;
 
         default:
-          // If it's a printable character and we're not editing, start editing with that character
-          if (!isEditing && e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+          // Start editing with the typed character
+          if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
             e.preventDefault();
-            shouldStartEditing = true;
-            nextCell = selectedCell.cellId;
-            // We'll handle the character input in a separate effect
-            setTimeout(() => {
-              handleCellChange(selectedCell.cellId, e.key);
-            }, 0);
+            handleCellSelect(selectedCell.cellId, true);
+            handleCellChange(selectedCell.cellId, e.key);
           }
           break;
-      }
-
-      if (nextCell) {
-        handleCellSelect(nextCell, shouldStartEditing);
       }
     };
 
     window.addEventListener('keydown', handleGlobalKeyDown);
     return () => window.removeEventListener('keydown', handleGlobalKeyDown);
-  }, [selectedCell, handleCellSelect, getCurrentSheet, finishEditing]);
+  }, [selectedCell, handleCellSelect, getCurrentSheet, finishEditing, handleCellChange]);
 
   // Remove the cell-level handleKeyDown as it's now handled by the global handler
   const handleKeyDown = (e: React.KeyboardEvent) => {
